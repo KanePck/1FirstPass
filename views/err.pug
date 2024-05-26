@@ -1,0 +1,17 @@
+doctype html
+html
+	head
+		title
+	body
+		h1 Error message!
+		if errors
+			ul
+			for error in errors
+				li!=error.path+": "+ error.value+ "; Error message: "+error.msg
+		h2 Back to Home/signup page
+		ul.nav.navbar-nav
+			li.active
+				a(href='/') Home
+				
+		
+			

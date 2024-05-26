@@ -1,0 +1,85 @@
+/*.container {
+    display: flex;
+    max-width: 1000px
+    /*flex-wrap: wrap;  /*Allows items to wrap onto the next line if needed
+    justify-content: center; /*Centers items horizontally */
+    /*align-items: center; /* Centers items vertically */
+/*}
+
+#video, #canvas {
+    max-width: calc(50% - 10px);
+    margin: 5px;
+}
+
+/* Media query for screens wider than 600px*/
+/*@media screen and (min-width: 600px) {
+    .container {
+        justify-content: space-between; /* Distributes space between items */
+    /*}
+
+    #video, #canvas, #photo {
+        max-width: calc(50% - 10px); /* Adjusts max-width for larger screens */
+    /*}
+}*/
+
+
+#video {
+    border: 1px solid black;
+    box-shadow: 2px 2px 3px black;
+    width: 320px;
+    height: 240px;
+    position: relative
+}
+
+#face-guide {
+    border: 2px dashed red; /* Dashed border for the guide box */
+    width: 160px; /* Width of the guide box */
+    height: 200px; /* Height of the guide box */
+    position: absolute; /* Position it over the video */
+    top: 250px; /* Adjust these values to center the box */
+    left: 85px; /* Adjust these values to center the box */
+    pointer-events: none; /* Allows clicks to pass through to the video */
+}
+
+#photo {
+    border: 1px solid black;
+    box-shadow: 2px 2px 3px black;
+    width: 320px;
+    height: 240px;
+}
+
+#canvas {
+    display: none
+    
+}
+
+.camera {
+    width: 340px;
+    display: inline-block;
+}
+
+.output {
+    width: 340px;
+    display: inline-block;
+    vertical-align: top;
+}
+
+#startbutton {
+    display: block;
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    bottom: 32px;
+    background-color: rgb(0 150 0 / 50%);
+    border: 1px solid rgb(255 255 255 / 70%);
+    box-shadow: 0px 0px 1px 2px rgb(0 0 0 / 20%);
+    font-size: 14px;
+    font-family: "Lucida Grande", "Arial", sans-serif;
+    color: rgb(255 255 255 / 100%);
+}
+
+.contentarea {
+    font-size: 16px;
+    font-family: "Lucida Grande", "Arial", sans-serif;
+    width: 1000px;
+}
