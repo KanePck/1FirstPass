@@ -1,0 +1,19 @@
+doctype html
+html
+	head
+		| Signing up/Registration complete
+	body
+		h1 Your signing up has been completed.
+		p#user Please Login 
+			form(action='/login', method='post') Existing User, please login.
+				br
+				br
+				label(for='uname')
+				input#uname(type='text' autofocus, name='username' required, value='Your name ')
+				br
+				br
+				div
+				button(type='submit') Login 
+				br
+				br
+		

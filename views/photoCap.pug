@@ -1,0 +1,29 @@
+doctype html
+html
+head
+Title User self photo session
+link(rel='stylesheet', href='/stylesheets/photoCap.css')
+script(src='/scripts/capPhoto1.js')
+body
+ .contentarea
+  h1 Still photo capture
+  p Please take 3 photos of yourself.
+  button#startButton
+      |1.Start camera
+  br
+  br
+  button#photoButton
+      |2.Take photo
+  br
+  br
+  button#stopButton
+      |3.Stop camera
+  br
+  br
+  .camera
+     video#video.inline 
+      |Video stream not available
+     div#face-guide
+     canvas#canvas.inline      
+        .output
+          img#photo(alt="The screen capture will appear in this box.")    

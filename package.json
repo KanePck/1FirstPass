@@ -1,0 +1,39 @@
+{
+  "name": "express-pwd-no-more",
+  "version": "0.0.0",
+  "private": true,
+  "gypfile": true,
+  "scripts": {
+    "start": "node app",
+    "build": "node-gyp rebuild",
+    "clean": "node-gyp clean"
+  },
+  "description": "ExpressPwdNoMore",
+  "author": {
+    "name": ""
+  },
+  "dependencies": {
+    "-": "^0.0.1",
+    "body-parser": "^1.15.0",
+    "cookie-parser": "^1.4.0",
+    "debug": "^2.2.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.14.0",
+    "express-async-handler": "^1.2.0",
+    "express-validator": "^7.0.1",
+    "ffi-napi": "^4.0.3",
+    "g": "^2.0.1",
+    "mongoose": "^8.3.3",
+    "morgan": "^1.7.0",
+    "node-addon-api": "^8.0.0",
+    "node-gyp": "^10.0.1",
+    "pug": "^2.0.0-beta6",
+    "ref-napi": "^3.0.3",
+    "serve-favicon": "^2.3.0",
+    "validator": "^13.11.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.21.0"
+  },
+  "eslintConfig": {}
+}
