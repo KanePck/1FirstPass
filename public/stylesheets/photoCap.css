@@ -36,7 +36,7 @@
     width: 160px; /* Width of the guide box */
     height: 200px; /* Height of the guide box */
     position: absolute; /* Position it over the video */
-    top: 250px; /* Adjust these values to center the box */
+    top: 280px; /* Adjust these values to center the box */
     left: 85px; /* Adjust these values to center the box */
     pointer-events: none; /* Allows clicks to pass through to the video */
 }

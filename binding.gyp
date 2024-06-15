@@ -1,18 +1,14 @@
 {
-    "targets": [{
-        "target_name": "pwdNomore",
-        "cflags!": [ "-fno-exceptions" ],
-        "cflags_cc!": [ "-fno-exceptions" ],
+    	"target_name": "pwdNmLib.dll",
+		"type": "shared_library",
         "sources": [
-            "public/cpp/mainPN.cpp"
+            "C:/k_pic/source/repos/pwdNmLib/pwdNmLib/pwdNmLib.cpp", "C:/k_pic/source/repos/pwdNmLib/pwdNmLib/pwdNmLib.h"
         ],
         'include_dirs': [
-            "<!@(node -p \"require('node-addon-api').include\")"
+            "C:/k_pic/source/repos/pwdNmLib/pwdNmLib"
         ],
         'libraries': [],
-        'dependencies': [
-            "<!(node -p \"require('node-addon-api').gyp\")"
-        ],
-        'defines': [ 'NAPI_DISABLE_CPP_EXCEPTIONS' ]
-    }]
+        'dependencies': [],
+        'defines': []
+	}]
 }

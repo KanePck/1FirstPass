@@ -1,0 +1,3 @@
+C:\Users\k_pic\source\repos\ExpressPwdNoMore\public\images\idenPhoto\Kane1.png; 1
+C:\Users\k_pic\source\repos\ExpressPwdNoMore\public\images\idenPhoto\Kane2.png; 1
+C:\Users\k_pic\source\repos\ExpressPwdNoMore\public\images\idenPhoto\Kane3.png; 1

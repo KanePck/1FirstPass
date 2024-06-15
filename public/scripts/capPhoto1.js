@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         //photo.style.display = 'inline-block';
         // Check if imageDataUrl is defined before calling savePhoto
         if (imageDataUrl) {
-            imageObj = { image: imageDataUrl, Number: photNo };
+            imageObj = { image: imageDataUrl, Number: photNo};
             savePhoto(imageObj);
             if (photNo == 3) {
                 window.location.href = '/sup';
@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     };
     var photNo = 1;
+    //var label = 1;
     photoButton.addEventListener('click', takePhoto);
     stopButton.addEventListener('click', () => {
         if (stream) {
