@@ -7,6 +7,8 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 require('dotenv').config();
+const ffin = require('ffi-napi');
+const ref = require('ref-napi');
 var app = express();
 
 var routes = require('./routes/index');
@@ -18,6 +20,9 @@ var ffi = require('./routes/ffi');
 var saveImage = require('./routes/saveImage');
 var sup = require('./routes/sup');
 var login = require('./routes/login');
+var saveFaceLn = require('./routes/saveFaceLn');
+var label = 1; //label of each user photo used in /saveImage
+var count = 1; // no of times user do face login used in /ffi
 
 //var document = new Document();
 const { body, validationResult } = require("express-validator");
@@ -80,7 +85,10 @@ app.use('/photoCap', photoCap);
 app.use('/saveImage', saveImage);
 app.use('/sup', sup);
 app.use('/login', login);
+app.use('/saveFaceLn', saveFaceLn);
+app.use('/ffi', ffi);
 app.get('/', function (req, res) {
+    console.log('Port: ', process.env.PORT);
     res.render('index.pug');
 });
 app.post('/', function (req, res) {
@@ -198,14 +206,23 @@ app.post('/saveImage', (req, res) => {
     const base64Data = dataUrl.replace(/^data:image\/png;base64,/, ''); // Remove the data URL prefix
     const name = uName.getUsername();
     var phoNo = req.body.Number;
-    const absolutePath = path.join(__dirname, 'public', 'images', `${name}${phoNo}.png`);
+    //var label = req.body.Label;
+    const absolutePath = path.join(__dirname, 'public', 'images', 'idenPhoto', `${name}${phoNo}.png`);
+    const csvPath = path.join(__dirname, 'public', 'images', 'csv', `${name}.txt`);
     fs.writeFile(absolutePath, base64Data, 'base64', (err) => { // Replace 'path/to/save/' with the actual path
         if (err) {
             console.error(err);
             return res.status(500).send('Error saving the image');
         }
         console.log(`Image ${phoNo} saved successfully`);
+        fs.appendFile(csvPath, `${absolutePath}; ${label}\n`, (err) => { //To create label and write a csv file for each user with 'path/image.png ; label'
+            if (err) {
+                console.error(err);
+                return res.status(500).send('Error writing csv file');
+            }
+        });
         if (phoNo == 3) {
+            label += 1;
             res.redirect('/sup');
         } 
         
@@ -233,28 +250,76 @@ app.post('/login', function (req, res) {
         if (nameValid) {
             //go to take photo
             console.log('Name exists');
+            uName.setUsername(req.body.username);
             res.render('photoLog.pug');
         } else {
+            res.send('User name not exists.')
             console.log('Name not exist');
         }
     }
     checkReq();
 });
-app.post('/ffi', function (req, res) {
-    var name = body.username;
-    var mail = body.email;
-    console.log(req.body);
+app.post('/saveFaceLn', (req, res) => {
+    const dataUrl = req.body.image;
+    const base64Data = dataUrl.replace(/^data:image\/png;base64,/, ''); // Remove the data URL prefix
+    const name = uName.getUsername();
+    var phoNo = req.body.Number;
+    //var label = req.body.Label;
+    const absolutePath = path.join(__dirname, 'public', 'images', 'loginPhoto', `${name}.png`);
+    
+    fs.writeFile(absolutePath, base64Data, 'base64', (err) => { // Replace 'path/to/save/' with the actual path
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error saving the image');
+        }
+        console.log(`Image ${phoNo} saved successfully`);
+        // Send a JSON response indicating success
+        res.json({ message: `Image ${phoNo} saved successfully` });
+    });
+});
+app.get('/ffi', function (req, res) {
+    var name = uName.getUsername();
+    var faceOk = false;
+    console.log(`login name: ${name}`);
+    var voi=ref.types.void;
+    var int = ref.types.int;
+    var bool = ref.types.bool;
+    var string = ref.types.CString;
+    const dllPath = path.join(__dirname, 'x64', 'Debug', 'pwdNmLib.dll');//'C:\\Users\\k_pic\\source\\repo\\ExpressPwdNoMore\\x64\\Debug\\pwdNmLib.dll';
+    console.log(dllPath);
     // Define the types for your function return and argument types
-    const myFunction = ffi.pwdNmLib('C:\Users\k_pic\source\repo\pwdNmLib\x64\Debug\pwdNmLib.dll', {
-        "regis": ['void', ['std::string', 'std::string']],
-        "coutMessHdlr": ['void', ['std::string']],
-        "logFace": ['void', ['std::string']]
+    var myFunction = ffin.Library(dllPath, { //'C:\Users\k_pic\source\repo\ExpressPwdNoMore\x64\Release\pwdNmLib.dll'
+        "genPwd": [string, [int, bool, bool, bool]],
+        "coutMessHdlr": [string,[]],
+        "logFace": [bool, [string]]
 
     });
 
-    // Call the function
-    const result = myFunction.regis(name, mail);
-
+    try {
+        faceOk = myFunction.logFace(`${name}`);
+        console.log('catch blog executed');
+    } catch(error) {
+        console.error('Error calling logFace:', error.message);
+    }
+    if (!faceOk) {
+        console.log('Face login fails.');
+        //const message = myFunction.coutMessHdlr();
+        //console.log(message);
+        var rem = 3 - count; //count is global var with initial value = 1
+        let remObj = { "Count": count, "Remain": rem };//JSON syntax
+              
+        console.log(`This is your photo no: ${count} for face login.`);
+        count += 1;
+        if (rem == 0) {
+            res.render('fail3Login.pug');
+        } else {
+            res.render('rePhotoLog.pug', {remObj});
+        }
+    } else {
+        console.log(` faceOk: ${faceOk}`, 'Face login is completed and successful.');
+        res.render('validLogin.pug');
+        
+    }
     //res.render('sup.pug');
 });
 app.get('/error', function (req, res) {

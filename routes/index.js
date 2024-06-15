@@ -12,6 +12,7 @@ app.post('/', function (req, res) {
 
 /* GET home page. */
 router.get('/', function (req, res) {
+    console.log('Port: ', process.env.PORT);
     res.render('index.pug', { title: 'pwdNoMore' });
 });
 

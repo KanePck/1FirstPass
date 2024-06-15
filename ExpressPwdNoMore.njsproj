@@ -32,6 +32,7 @@
     <Content Include="app.js" />
     <Content Include="binding.gyp" />
     <Content Include="indexPN.js" />
+    <Content Include="libman.json" />
     <Content Include="public\.gitignore" />
     <Content Include="public\cpp\mainPN.cpp" />
     <Content Include="public\cpp\signup.cpp" />
@@ -65,6 +66,9 @@
     <Content Include="routes\photoCap.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="routes\saveFaceLn.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="routes\saveImage.js">
       <SubType>Code</SubType>
     </Content>
@@ -83,6 +87,9 @@
     <Content Include="views\err.pug">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="views\fail3Login.pug">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="views\index.pug" />
     <Content Include="views\layout.pug" />
     <Content Include="views\error.pug" />
@@ -92,13 +99,22 @@
     <Content Include="views\photoLog.pug">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="views\rePhotoLog.pug">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="views\sup.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\validLogin.pug">
       <SubType>Code</SubType>
     </Content>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="public\" />
     <Folder Include="public\images\" />
+    <Folder Include="public\images\csv\" />
+    <Folder Include="public\images\idenPhoto\" />
+    <Folder Include="public\images\loginPhoto\" />
     <Folder Include="public\scripts\" />
     <Folder Include="public\cpp\" />
     <Folder Include="public\stylesheets\" />

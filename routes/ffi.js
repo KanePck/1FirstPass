@@ -2,25 +2,24 @@
 var express = require('express');
 var router = express.Router();
 var app = express();
-const ffi = require('ffi-napi');
+const ffin = require('ffi-napi');
 const ref = require('ref-napi');
 const { body } = require('../node_modules/express-validator/src/index');
-var name = FormData.username;
-var mail = FormData.email;
 app.set('view engine', 'pug');
 app.set('views', './views');
-app.post('/ffi', function (req, res) {
+app.get('/ffi', function (req, res) {
     console.log(req.body);
+    //var name = req.body.username;
     // Define the types for your function return and argument types
-    const myFunction = ffi.pwdNmLib('C:\Users\k_pic\source\repo\pwdNmLib\x64\Debug\pwdNmLib.dll', {
-        "regis": ['void', ['std::string', 'std::string']],
-        "coutMessHdlr": ['void', ['std::string']],
-        "logFace": ['void', ['std::string']]
+    /*var myFunction = ffin.Library('C:\\Users\\k_pic\\source\\repo\\ExpressPwdNoMore\\x64\\Debug\\pwdNmLib.dll', {
+        "genPwd": ['void', ['int', 'bool', 'bool', 'bool']],
+        "coutMessHdlr": ['void', ['string']],
+        "logFace": ['bool', ['string']]
 
     });
 
-    // Call the function
-    const result = myFunction.regis(name, mail);
+    /* Call the function
+    const result = myFunction.logFace(name);*/
 
 });
 router.get('/ffi', function (req, res) {
