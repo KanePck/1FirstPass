@@ -37,6 +37,12 @@
     <Content Include="public\cpp\mainPN.cpp" />
     <Content Include="public\cpp\signup.cpp" />
     <Content Include="public\cpp\signup.h" />
+    <Content Include="public\scripts\camOff.js">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="public\scripts\camOn.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="public\scripts\capPhoto1.js">
       <SubType>Code</SubType>
     </Content>
@@ -44,10 +50,13 @@
     <Content Include="public\scripts\capPhoto2.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="public\scripts\checkPassw.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="public\stylesheets\photoCap.css">
       <SubType>Code</SubType>
     </Content>
-    <Content Include="routes\dbModels\Urls.js">
+    <Content Include="routes\dbModels\UserDb.js">
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\dbModels\Users.js">
@@ -59,8 +68,17 @@
     <Content Include="routes\ffi.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="routes\genPasswd.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="routes\index.js" />
     <Content Include="routes\login.js">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="routes\logPasswHdlr.js">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="routes\mpassHdlr.js">
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\photoCap.js">
@@ -81,6 +99,9 @@
     <Content Include="routes\sup.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="routes\supPassw.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="routes\uName.js">
       <SubType>Code</SubType>
     </Content>
@@ -90,13 +111,31 @@
     <Content Include="views\fail3Login.pug">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="views\fail3logPw.pug">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="views\index.pug" />
     <Content Include="views\layout.pug" />
     <Content Include="views\error.pug" />
+    <Content Include="views\masterPass.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\mpassErr.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\passwLog.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\passwNotStrong.pug">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="views\photoCap.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\photoLog.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\rePasswLog.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\rePhotoLog.pug">

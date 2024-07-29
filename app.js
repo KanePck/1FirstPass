@@ -9,6 +9,12 @@ var bodyParser = require('body-parser');
 require('dotenv').config();
 const ffin = require('ffi-napi');
 const ref = require('ref-napi');
+const bcrypt = require('bcrypt');
+//const { Buffer } = require('buffer');//Node.js
+const uaParser = require('ua-parser-js');
+//const Vault = require('vault-storage');
+//var rs = require('jsrsasign');
+//var rsu = require('jsrsasign-util');
 var app = express();
 
 var routes = require('./routes/index');
@@ -21,8 +27,12 @@ var saveImage = require('./routes/saveImage');
 var sup = require('./routes/sup');
 var login = require('./routes/login');
 var saveFaceLn = require('./routes/saveFaceLn');
+var supPassw = require('./routes/supPassw');
+var mpassHdlr = require('./routes/mpassHdlr');
+var logPasswHdlr = require('./routes/logPasswHdlr');
 var label = 1; //label of each user photo used in /saveImage
 var count = 1; // no of times user do face login used in /ffi
+var passwCount = 0; // no of times user do password login used in /logPasswHdlr
 
 //var document = new Document();
 const { body, validationResult } = require("express-validator");
@@ -31,6 +41,7 @@ const { isEmail } = require('validator');
 const asyncHandler = require("express-async-handler");
 const { checkSchema, matchedData } = require('./node_modules/express-validator/src/index');
 const Users = require('./routes/dbModels/Users');
+const UserDb = require('./routes/dbModels/UserDb');
 const fs = require('fs');
 const uName = require('./routes/uName');
 //const Urls = require('./routes/Urls');
@@ -49,6 +60,7 @@ async function connectDb() {
 async function userCreate(body) {
     try {
         const date = new Date();
+        //Users define at line 39
         const u0 = new Users({ userName: body.username, email: body.email, mPhone: body.phone, dateJoin: date });
         await u0.save();
         console.log(`User: ${body.username} added to DB`);
@@ -87,9 +99,18 @@ app.use('/sup', sup);
 app.use('/login', login);
 app.use('/saveFaceLn', saveFaceLn);
 app.use('/ffi', ffi);
+app.use('/supPassw', supPassw);
+app.use('/mpassHdlr', mpassHdlr);
+app.use('/logPasswHdlr', logPasswHdlr);
 app.get('/', function (req, res) {
     console.log('Port: ', process.env.PORT);
+    /*const userAgent = req.headers['user-agent'];
+    console.log('User-Agent:', userAgent);
+    let parser = uaParser('userAgent');
+    let parserResults = parser.getResult();
+    console.log(parserResults);*/
     res.render('index.pug');
+   
 });
 app.post('/', function (req, res) {
     console.log(req.body);
@@ -145,8 +166,14 @@ app.post('/signup', checkSchema({
                 }
             }
             async function deleteRec() {
-                await Users.deleteMany({ userName: /Kane/ });
-                console.log("all Kane* records deleted");
+                await Users.deleteMany({ userName: /Kane/ })
+                .then(() => {
+                    console.log('Kane record deleted successfully');
+                })
+                .catch(error => {
+                    console.error('Error deleting Kane record:', error);
+                    // Handle error, e.g., retry, log, or notify
+                });
             }
             async function handleReq(req) {
                 await deleteRec(); // To delete some db records
@@ -170,7 +197,7 @@ app.post('/signup', checkSchema({
                     res.render('err.pug');
                 } else {
                     // Using Promise.all to execute all async operations and wait for them to complete
-                    const promise2 = userCreate(req.body);
+                    const promise2 = userCreate(req.body);//To create user credentials database
                     const promises = [promise1, promise2];
                     Promise.allSettled(promises)
                         .then(results => {
@@ -186,7 +213,7 @@ app.post('/signup', checkSchema({
                     //console.log('Connection to db closed successfully.');
                     //body: JSON.stringify(body.username);
                     uName.setUsername(req.body.username);
-                    res.redirect('/photoCap');
+                    res.redirect('/supPassw');
                 }
             }
             handleReq(req);
@@ -200,6 +227,9 @@ app.get('/photoCap', function (req, res) {
     res.render('photoCap.pug', { title: 'User to take self photo' })
 
 });   
+app.get('/supPassw', function (req, res) {
+    res.render('masterPass.pug', { title: 'User to provide master password' })
+});
 
 app.post('/saveImage', (req, res) => {
     const dataUrl = req.body.image;
@@ -233,13 +263,15 @@ app.get('/sup', function (req, res) {
 });
 app.post('/login', function (req, res) {
     const name = req.body.username;
+    let face = false;
     connectDb();
     async function checkName() {
         const query = Users.findOne({ userName: `${name}` });
         const doc = await query.exec();
-        if (doc && doc.userName === name) { //To check if name duplicate
+        if (doc && doc.userName === name) { //To check if name exists
             //do something
             console.log(`${doc.userName}=${name}`);
+            face = doc.facePhoto;
             return true;
         } else {
             return false;
@@ -251,7 +283,12 @@ app.post('/login', function (req, res) {
             //go to take photo
             console.log('Name exists');
             uName.setUsername(req.body.username);
-            res.render('photoLog.pug');
+            if (face) {
+                res.render('photoLog.pug');
+            } else {
+                res.render('passwLog.pug', {username: name });
+            }
+            
         } else {
             res.send('User name not exists.')
             console.log('Name not exist');
@@ -276,6 +313,178 @@ app.post('/saveFaceLn', (req, res) => {
         // Send a JSON response indicating success
         res.json({ message: `Image ${phoNo} saved successfully` });
     });
+});
+app.post('/mpassHdlr', function (req, res) {
+    const { pbkdf2, generateKeyPairSync } = require('crypto');
+    const { Buffer } = require('buffer');
+    //import Vault from 'vault-storage/vault';
+    const passw1 = req.body.password;
+    const passw2 = req.body.cPassw;
+    const regExp = /[A - Za - z0 - 9]/;
+    const specReg = /[^a - zA - Z0 - 9\s]/;
+    let facePh = false;
+    var encryptPrvKey, pubKey;
+    if (req.body.option == 'photo') {
+        facePh = true;
+    }
+
+    if (passw1 != passw2) {
+        return res.render('mpassErr.pug');
+    }
+    // Regular expression for capital letters
+    const capitalRegExp = /[A-Z]/;
+
+    // Regular expression for numbers
+    const numberRegExp = /[0-9]/;
+
+    // Regular expression for special characters (consider adjusting based on your needs)
+    const specialCharRegExp = /[!@#$%^&*()_+\-=\[\]{};':"/?.<>|,\\]/;
+
+    // Combined check for all requirements (logical AND)
+    const strongPasswordRegExp = new RegExp('^(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[!@#$%^&*()_+\-=\[\]{};:\'"?/?.<>|,\\]).{8,}$');
+
+    if (!capitalRegExp.test(passw1) || !numberRegExp.test(passw1) || !specialCharRegExp.test(passw1) || passw1.length < 8) {
+        return res.render('passwNotStrong.pug');
+    }
+    console.log('passwork check complete');
+    const usName = uName.getUsername();
+    console.log('getUsername done.');
+    //To get option of face photo
+    updDbFace();
+    var salt, hashPassw;
+    var drvKey = Buffer.alloc(64);
+    const promise1 = genHashDkey(passw1)
+        .then(() => {
+            console.log('Password hash and derived key generated.');
+        })
+        .catch((error) => {
+            console.error('genHashDkey error: ', error);
+        });
+    const promise2 = 22;
+    Promise.all([promise1, promise2])
+        .then(() => {
+            const { publicKey, privateKey, } = generateKeyPairSync('rsa', {
+                modulusLength: 4096,
+                publicKeyEncoding: {
+                    type: 'spki',
+                    format: 'pem',
+                },
+                privateKeyEncoding: {
+                    type: 'pkcs8',
+                    format: 'pem',
+                    cipher: 'aes-256-cbc',
+                    passphrase: drvKey,
+                },
+            });
+            encryptPrvKey = privateKey;
+            //pubKey = publicKey;
+            userDbCreate(usName, hashPassw, drvKey, encryptPrvKey, publicKey);//To store User keys data in db
+            //const userStorage = new Vault('user-storage');
+            //userStorage.setItem('publicKey', pubKey);
+            console.log('Promise.all done');
+        })
+        .catch((error) => {
+            console.error('promise.all error: ', error);
+        });
+    
+    //Some Functions
+    async function updDbFace() {
+        try {
+            console.log('updDbFace is in.');
+            const filter = { userName: usName };
+            const update = { facePhoto: facePh };
+            const doc = await Users.findOneAndUpdate(filter, update, { new: true });
+            console.log('doc: ', doc.userName, ' ', doc.facePhoto);
+            /*if (res.acknowledged) {
+                console.log('Update face photo status done.');
+            }*/
+            console.log(passw1, passw2, facePh);
+        } catch (error) {
+            if (error.name === 'MongoError') {
+                console.error('Database Error:', error.message);
+            } else {
+                console.error('Unexpected Error:', error.message || error);
+            }
+            //console.error('Error updDbf:', error);
+        }
+
+    }
+    async function genHashDkey(password) {
+        console.log('genHashDkey is in');
+        const saltRound = 10;
+        salt = await bcrypt.genSalt(saltRound);
+        console.log('salt:', salt);
+        hashPassw = await bcrypt.hash(password, salt);
+        console.log('salt: ', salt, 'hash: ', hashPassw);
+        await pbkdf2(password, salt, 10000, 64, 'sha512', (err, derivedKey) => {
+            if (err) throw err;
+            console.log('Derived Key: ', derivedKey.toString('hex'));
+            drvKey = derivedKey;
+            //genKeyPair(derivedKey);
+        });
+        return hashPassw;
+    }
+
+    async function userDbCreate(usName, hashPw, dKey, enPrvKy, pubKey) {
+        try {
+            //UserDb define at line 40
+            const u0 = new UserDb({ userName: usName, hashPassw: hashPw, derivedKey: dKey, encPrvKey: enPrvKy, publicKey: pubKey });
+            await u0.save();
+            console.log(`User: ${usName} and encrypted keys added to UserDb`);
+
+        } catch (err) {
+            console.log(err);
+        }
+
+    }
+});
+app.post('/logPasswHdlr', function (req, res) {
+    var name = uName.getUsername();
+    var hashP;
+    passwCount += 1;
+    var remCount = 3 - passwCount;
+    const passw = req.body.password;
+    const promise1 = findHashPassw(name);
+    const promise2 = 22;
+    let usrObj = { 'username': name, 'remAttempt': remCount }; //JSON syntax
+    Promise.all([promise1, promise2])
+        .then(() => {
+            bcrypt.compare(passw, hashP, function (err, result) {
+                if (result == true) {
+                    res.render('validLogin.pug');
+                } else {
+                    if (passwCount < 3) {
+                        //console.log('remaing count: ', remCount, 'name: ', name);
+                        res.render('rePasswLog.pug', { usrObj});
+                    } else {
+                        res.render('fail3logPw.pug');
+                    }
+                }
+            }); 
+            
+        })
+        .catch ((error) => {
+            console.error('promise.all error: ', error);
+        });
+    async function findHashPassw(name) {
+        try {
+            const query = UserDb.where({ userName: name });
+            const user = await query.findOne();
+            hashP = user.hashPassw;
+            
+        } catch (err) {
+            console.log(err);
+        }
+    }
+    async function checkPassw(passwd, hash) {
+        var match = false;
+        match = await bcrypt.compare(passwd, hash)
+        if (match) {
+            return true;
+        } else return false;
+
+    }
+    
 });
 app.get('/ffi', function (req, res) {
     var name = uName.getUsername();
@@ -311,12 +520,13 @@ app.get('/ffi', function (req, res) {
         console.log(`This is your photo no: ${count} for face login.`);
         count += 1;
         if (rem == 0) {
+            count = 1;
             res.render('fail3Login.pug');
         } else {
             res.render('rePhotoLog.pug', {remObj});
         }
     } else {
-        console.log(` faceOk: ${faceOk}`, 'Face login is completed and successful.');
+        console.log(` faceOk: ${faceOk}.`, 'Face login is completed and successful.');
         res.render('validLogin.pug');
         
     }

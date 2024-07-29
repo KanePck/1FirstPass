@@ -1,0 +1,19 @@
+doctype html
+html
+head
+Title User to retry a login password
+link(rel='stylesheet', href='/stylesheets/photoCap.css')
+body
+ .contentarea
+  h1 User login password is to retry.
+  h2 You have remaining #{usrObj.remAttempt} attempts to login.
+  p#passw 
+        form(action='/logPasswHdlr', id='passw', method='post') #{usrObj.username}, please input valid password
+                br
+                br
+                label(for='passw') Password: (8-16 characters) 
+                br
+                input#passw(type='password', name='password' required, minlength='8', maxlength='16', value='')
+                br
+                br
+                button(type='submit') Submit
