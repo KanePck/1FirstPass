@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const photoButton = document.getElementById('photoButton');
     const stopButton = document.getElementById('stopButton');
     let stream = null;
+    let photNo = 1;
 
     startButton.addEventListener('click', () => {
         navigator.mediaDevices.getUserMedia({ video: true })
@@ -21,9 +22,28 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 console.error("Error accessing the camera: ", `${err}`);
             });
     });
+    const cropCanvas = (sourceCanvas, leftPercentage, topPercentage, widthPercentage, heightPercentage) => {
+        const targetCanvas = document.createElement('canvas');
+        const tCtx = targetCanvas.getContext('2d');
 
+        // Calculate the cropped dimensions
+        const croppedWidth = sourceCanvas.width * widthPercentage;
+        const croppedHeight = sourceCanvas.height * heightPercentage;
+
+        // Calculate the position for cropping
+        const left = sourceCanvas.width * leftPercentage;
+        const top = sourceCanvas.height * topPercentage;
+
+        // Set dimensions for the target canvas
+        targetCanvas.width = croppedWidth;
+        targetCanvas.height = croppedHeight;
+
+        // Draw the cropped section onto the target canvas
+        tCtx.drawImage(sourceCanvas, left, top, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
+
+        return targetCanvas.toDataURL('image/png');
+    };
     function takePhoto() {
-        //alert('Taking photo');
         if (photNo > 3) {
             alert('Taking photo exceed 3 times');
             return;
@@ -35,7 +55,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const ctx = canvas.getContext('2d');
         try {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            imageDataUrl = canvas.toDataURL('image/png');
+            imageDataUrl = cropCanvas(canvas, 0.25, 0.05, 0.5, 0.85);
+            //imageDataUrl = canvas.toDataURL('image/png');
             photo.setAttribute('src', imageDataUrl); // Ensure this is an 'img' element in your HTML
         } catch (error) {
             console.log('Error drawing image on canvas: ' + error.message);
@@ -46,13 +67,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
         if (imageDataUrl) {
             imageObj = { image: imageDataUrl, Number: photNo };
             savePhoto(imageObj);
-            if (photNo == 3) {
-                window.location.href = '/sup';
-            }
-            photNo += 1;
+            
         }
+        photNo += 1;
     };
-    var photNo = 1;
+    //var photNo = 1;
     //var label = 1;
     photoButton.addEventListener('click', takePhoto);
     stopButton.addEventListener('click', () => {
@@ -61,7 +80,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
             //alert('Camera access stopped');
         }
     });
-    function savePhoto(imageObj) {
+    function savePhoto(imageObj) { //This function post imageObj to saveFaceLn.js then if result is ok to ffi.js
 
         // Use fetch to send the data URL to the server
         fetch('/saveFaceLn', { // '/saveFaceLn' is the path to your server endpoint

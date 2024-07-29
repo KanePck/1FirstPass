@@ -1,6 +1,22 @@
 doctype html
 html
-	head
-		| Login complete
-	body
-		h1 Your login has been completed and valid.
+    head
+        | Login complete
+        script(src='/scripts/webOn.js')
+    body
+        h1 Your login has been completed and valid.
+        p Do you want to log in to old website or sign up to new website: 
+        form(action='/webAccess', method='post') Please select:  
+         li
+            input#web(check='checked', name='oldNew', type='radio', value='old')
+            | Old website. 
+            label(for='url') Please enter http(s)://URL
+            input#ourl(type='URL', name='oldUrl' placeholder="http://example.com" pattern="http://.*" size="30" required)
+         li
+            input(name='oldNew', type='radio', value='new')
+            | New website. 
+            label(for='url') Please enter http(s)://URL
+            input#nurl(type='URL', name='newUrl' placeholder="http://example.com" pattern="http://.*" size="30" required)
+            br
+            br
+            button(type='submit') Submit

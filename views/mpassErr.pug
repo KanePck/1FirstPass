@@ -1,0 +1,34 @@
+doctype html
+html
+head
+Title The master passwords not matched
+link(rel='stylesheet', href='/stylesheets/photoCap.css')
+body
+ .contentarea
+  h1 The two master password was not exactly matched. Please reinput correctly.
+  p The password is to have total at least 8 and no more than 16 letters including small, capital letters, number and special characters.
+  p#passw 
+        form(action='/mpassHdlr', id='passw', method='post') New User, please input new password
+                br
+                br
+                label(for='passw') Password: (8-16 characters) 
+                br
+                input#1passw(type='password', name='password' required, minlength='8', maxlength='16', value='')
+                br
+                br
+                label(for='confPassw') Confirmed Password: 
+                br
+                input#2passw(type='password', name='cPassw' required, onkeyup='checkPassw.js', value='')
+                br
+                span#message
+                br
+                script(src='/scripts/checkPassw.js')
+                br
+                br
+                input#optPhoto(name='option', type='radio', value='photo')
+                | Option self photo
+                input#optPhoto(checked='checked', name='option', type='radio', value='noPhoto')
+                | No self photo
+                br
+                br
+                button(type='submit') Submit

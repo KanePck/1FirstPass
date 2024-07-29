@@ -21,6 +21,28 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 console.error("Error accessing the camera: ", `${err}`);
             });
     });
+    const cropCanvas = (sourceCanvas, leftPercentage, topPercentage, widthPercentage, heightPercentage) => {
+        const targetCanvas = document.createElement('canvas');
+        const tCtx = targetCanvas.getContext('2d');
+
+        // Calculate the cropped dimensions
+        const croppedWidth = sourceCanvas.width * widthPercentage;
+        const croppedHeight = sourceCanvas.height * heightPercentage;
+
+        // Calculate the position for cropping
+        const left = sourceCanvas.width * leftPercentage;
+        const top = sourceCanvas.height * topPercentage;
+
+        // Set dimensions for the target canvas
+        targetCanvas.width = croppedWidth;
+        targetCanvas.height = croppedHeight;
+
+        // Draw the cropped section onto the target canvas
+        tCtx.drawImage(sourceCanvas, left, top, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
+
+        return targetCanvas.toDataURL('image/png');
+    };
+
 
     function takePhoto () {
         //alert('Taking photo');
@@ -35,7 +57,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const ctx = canvas.getContext('2d');
         try {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            imageDataUrl = canvas.toDataURL('image/png');
+            imageDataUrl = cropCanvas(canvas, 0.25, 0.05, 0.5, 0.85 );
+            //imageDataUrl = canvas.toDataURL('image/png');
             photo.setAttribute('src', imageDataUrl); // Ensure this is an 'img' element in your HTML
         } catch (error) {
             console.log('Error drawing image on canvas: ' + error.message);
