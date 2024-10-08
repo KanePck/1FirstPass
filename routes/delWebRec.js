@@ -1,4 +1,3 @@
-//Called from index.pug
 'use strict';
 var express = require('express');
 var router = express.Router();
@@ -6,12 +5,11 @@ var app = express();
 
 app.set('view engine', 'pug');
 app.set('views', './views');
-app.post('/login', function (req, res) {
+app.get('/delWebRec', function (req, res) {
     console.log(req.body);
-    //res.redirect('/signUpCheck');
-});
-router.get('/login', function (req, res) {
-    res.send('Log in process');
-});
 
+});
+router.get('/delWebRec', function (req, res) {
+    res.render('delWebRec.pug');
+});
 module.exports = router;

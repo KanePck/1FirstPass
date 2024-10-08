@@ -1,0 +1,38 @@
+doctype html
+html
+  nav.navbar.navbar-inverse
+  .container-fluid
+      .navbar-header
+          a.navbar-brand(href='/') PwdNoMore Home!
+      ul.nav.navbar-nav
+          li.active
+              a(href='/') Home
+          li
+              a(href='/validLogin') validLogin
+          li
+              a(href='/newUrl') UserName/Password Creation
+        
+      ul.nav.navbar-nav.navbar-right
+  head
+    title New password generated for usage
+    link(rel='stylesheet', href='/stylesheets/main.css')
+    script(src='/scripts/dataStorage.js')
+  body
+  p For Url: #{pwObj.url}
+  p User Name: #{pwObj.webUn} 
+  p Password: #{pwObj.webPw}
+    
+  p Please press STORAGE button to store the url and username/password to this browser storage
+  button#store
+   |STORAGE
+  script.
+    // Assuming pwObj is available in this script
+    const pwObj = {
+    pwd: '#{pwObj.webPw}',
+    name: '#{pwObj.webUn}',
+    url: '#{pwObj.url}'
+    };
+    const js=JSON.stringify(pwObj);
+    document.getElementById('store').addEventListener('click', function() {
+    storePassword(js);
+    });

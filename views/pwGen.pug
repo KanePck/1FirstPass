@@ -1,0 +1,69 @@
+doctype html
+html
+  nav.navbar.navbar-inverse
+  .container-fluid
+      .navbar-header
+          a.navbar-brand(href='/') PwdNoMore Home!
+      ul.nav.navbar-nav
+          li.active
+              a(href='/') Home
+          li
+              a(href='/validLogin') Valid Login
+          li
+              a(href='/newUrl') UserName/Password Creation
+        
+      ul.nav.navbar-nav.navbar-right
+  head
+    title
+  body
+  | Password form generation
+  p New User name: #{unObj.webUn}
+  p For Url: #{unObj.url}
+  p#passwForm
+  form(action='/genWebPw', id='formPassw', method='post') Please specify format of required password.
+   br
+   br
+   li
+     select(name='user')
+       option(selected='selected', value=`${unObj.webUn}`) #{unObj.webUn}
+       
+   li
+     label(for='length') Length of password:
+     input#length(type='number', name='length')
+     br
+     br
+   li
+     |Lowercase requirement
+     input#lowCase(checked='checked', type='radio', name='lowCase', value='yes')
+     |Yes
+     input(type='radio', name='lowCase', value='no')
+     |No
+     br
+     br
+   li
+     |Uppercase requirement
+     input#upCase(checked='checked', type='radio', name='upCase', value='yes')
+     |Yes
+     input(type='radio', name='upCase', value='no')
+     |No
+     br
+     br
+   li
+     |Number character requirement
+     input#numChar(checked='checked', type='radio', name='numChar', value='yes')
+     |Yes
+     input(type='radio', name='numChar', value='no')
+     |No
+     br
+     br
+   li
+     |Special character requirement
+     input#specChar(type='radio', name='specChar', value='yes')
+     |Yes
+     input(type='radio', name='specChar', value='no', checked='checked')
+     |No
+     br
+     br
+     button(type='submit') Submit
+     br
+     

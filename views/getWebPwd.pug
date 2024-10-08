@@ -1,0 +1,23 @@
+doctype html
+html
+  nav.navbar.navbar-inverse
+  .container-fluid
+      .navbar-header
+          a.navbar-brand(href='/') PwdNoMore Home!
+      ul.nav.navbar-nav
+          li.active
+              a(href='/') Home
+          li
+              a(href='/validLogin') Valid Login
+          li
+              a(href='/page-2') Page 2
+        
+      ul.nav.navbar-nav.navbar-right
+  head
+    title To retrieve the password
+    link(rel='stylesheet', href='/stylesheets/main.css')
+    script(src='/scripts/webPwd.js')
+  body
+  p(data-url=webObj.url) The website that you requested: #{webObj.url}
+  table
+    tbody

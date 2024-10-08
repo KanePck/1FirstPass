@@ -1,4 +1,4 @@
-// Client side script code to save photos to server file system
+// Called from photoLog.pug. Client side script code to save photos to server file system
 document.addEventListener('DOMContentLoaded', (event) => {
     //alert('DOM fully loaded and parsed');
     const video = document.getElementById('video');//original - querySelector

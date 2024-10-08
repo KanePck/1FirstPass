@@ -1,0 +1,70 @@
+doctype html
+html
+  nav.navbar.navbar-inverse
+  .container-fluid
+      .navbar-header
+          a.navbar-brand(href='/') PwdNoMore Home!
+      ul.nav.navbar-nav
+          li.active
+              a(href='/') Home
+          li
+              a(href='/validLogin') Valid Login
+                  
+      ul.nav.navbar-nav.navbar-right
+  head
+    title
+  body
+  | User name form generation
+  p#passwForm
+  form(action='/genWebUn', id='formUserN', method='post') Please enter self user name or format for auto-creation of user name.
+   br
+   br
+   li
+     lable(for='self') Self provided name:
+     input#self(type='text', name='self')
+     br
+     br
+     button#self(type='submit') Submit
+     br
+     p For auto-creation of user name, please fill in below.
+     br
+   li
+     label(for='length') Length of user name:
+     input#length(type='number', name='length')
+     br
+     br
+   li
+     |Lowercase requirement
+     input#lowCase(checked='checked', type='radio', name='lowCase', value='yes')
+     |Yes
+     input(type='radio', name='lowCase', value='no')
+     |No
+     br
+     br
+   li
+     |Uppercase requirement
+     input#upCase(checked='checked', type='radio', name='upCase', value='yes')
+     |Yes
+     input(type='radio', name='upCase', value='no')
+     |No
+     br
+     br
+   li
+     |Number character requirement
+     input#numChar(checked='checked', type='radio', name='numChar', value='yes')
+     |Yes
+     input(type='radio', name='numChar', value='no')
+     |No
+     br
+     br
+   li
+     |Special character requirement
+     input#specChar(type='radio', name='specChar', value='yes')
+     |Yes
+     input(type='radio', name='specChar', value='no', checked='checked')
+     |No
+     br
+     br
+     button#auto(type='submit') Submit
+     br
+     

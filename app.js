@@ -10,15 +10,12 @@ require('dotenv').config();
 const ffin = require('ffi-napi');
 const ref = require('ref-napi');
 const bcrypt = require('bcrypt');
+const generator = require('generate-password');
 //const { Buffer } = require('buffer');//Node.js
 const uaParser = require('ua-parser-js');
-//const Vault = require('vault-storage');
-//var rs = require('jsrsasign');
-//var rsu = require('jsrsasign-util');
 var app = express();
 
 var routes = require('./routes/index');
-//var users = require('./routes/users');
 var signup = require('./routes/signup');
 var err = require('./routes/error');
 var photoCap = require('./routes/photoCap');
@@ -30,10 +27,23 @@ var saveFaceLn = require('./routes/saveFaceLn');
 var supPassw = require('./routes/supPassw');
 var mpassHdlr = require('./routes/mpassHdlr');
 var logPasswHdlr = require('./routes/logPasswHdlr');
+var webAccess = require('./routes/webAccess');
+//var data = require('./routes/data');
+var delWebRec = require('./routes/delWebRec');
+var userNameGen = require('./routes/userNameGen');
+var genWebPw = require('./routes/genWebPw');
+var genWebUn = require('./routes/genWebUn');
+var resultPassw = require('./routes/resultPassw');
+var oldUrl = require('./routes/oldUrl');
+var newUrl = require('./routes/newUrl');
+var validLogin = require('./routes/validLogin');
+var getWebPwd = require('./routes/getWebPwd');
 var label = 1; //label of each user photo used in /saveImage
 var count = 1; // no of times user do face login used in /ffi
 var passwCount = 0; // no of times user do password login used in /logPasswHdlr
-
+var urlObj;
+//var indexedDbId = 1; //unique id for browser indexed db key
+//var webLoginJSON = { 'url':'', 'WebUserName': '', 'WebPassword': '' };
 //var document = new Document();
 const { body, validationResult } = require("express-validator");
 const { isLength } = require('validator');
@@ -41,10 +51,11 @@ const { isEmail } = require('validator');
 const asyncHandler = require("express-async-handler");
 const { checkSchema, matchedData } = require('./node_modules/express-validator/src/index');
 const Users = require('./routes/dbModels/Users');
-const UserDb = require('./routes/dbModels/UserDb');
+const UserKeys = require('./routes/dbModels/UserKeys');
+const UserWebs = require('./routes/dbModels/UserWebs');
 const fs = require('fs');
 const uName = require('./routes/uName');
-//const Urls = require('./routes/Urls');
+const data = require('./routes/data');
 
 // Set up mongoose connection
 const mongoose = require("mongoose");
@@ -102,14 +113,19 @@ app.use('/ffi', ffi);
 app.use('/supPassw', supPassw);
 app.use('/mpassHdlr', mpassHdlr);
 app.use('/logPasswHdlr', logPasswHdlr);
+app.use('/webAccess', webAccess);
+//app.use('/data', data);
+app.use('/delWebRec', delWebRec);
+app.use('/userNameGen', userNameGen);
+app.use('/genWebPw', genWebPw);
+app.use('/genWebUn', genWebUn);
+app.use('/resultPassw', resultPassw);
+app.use('/oldUrl', oldUrl);
+app.use('/newUrl', newUrl);
+app.use('/validLogin', validLogin);
+app.use('/getWebPwd', getWebPwd);
 app.get('/', function (req, res) {
-    console.log('Port: ', process.env.PORT);
-    /*const userAgent = req.headers['user-agent'];
-    console.log('User-Agent:', userAgent);
-    let parser = uaParser('userAgent');
-    let parserResults = parser.getResult();
-    console.log(parserResults);*/
-    res.render('index.pug');
+    console.log(req.body);
    
 });
 app.post('/', function (req, res) {
@@ -261,9 +277,14 @@ app.post('/saveImage', (req, res) => {
 app.get('/sup', function (req, res) {
     res.render('sup.pug');
 });
-app.post('/login', function (req, res) {
+app.post('/login', function (req, res) { //Called from index.pug
     const name = req.body.username;
+    const faceReq = req.body.faceOption;
+    let faceDb = false;
     let face = false;
+    if (faceReq === 'yes') {
+        face = true;
+    }
     connectDb();
     async function checkName() {
         const query = Users.findOne({ userName: `${name}` });
@@ -271,7 +292,7 @@ app.post('/login', function (req, res) {
         if (doc && doc.userName === name) { //To check if name exists
             //do something
             console.log(`${doc.userName}=${name}`);
-            face = doc.facePhoto;
+            faceDb = doc.facePhoto;
             return true;
         } else {
             return false;
@@ -283,7 +304,7 @@ app.post('/login', function (req, res) {
             //go to take photo
             console.log('Name exists');
             uName.setUsername(req.body.username);
-            if (face) {
+            if (face&&faceDb) {
                 res.render('photoLog.pug');
             } else {
                 res.render('passwLog.pug', {username: name });
@@ -296,7 +317,7 @@ app.post('/login', function (req, res) {
     }
     checkReq();
 });
-app.post('/saveFaceLn', (req, res) => {
+app.post('/saveFaceLn', (req, res) => { //Called from scripts/capPhoto2.js
     const dataUrl = req.body.image;
     const base64Data = dataUrl.replace(/^data:image\/png;base64,/, ''); // Remove the data URL prefix
     const name = uName.getUsername();
@@ -323,6 +344,7 @@ app.post('/mpassHdlr', function (req, res) {
     const regExp = /[A - Za - z0 - 9]/;
     const specReg = /[^a - zA - Z0 - 9\s]/;
     let facePh = false;
+    let faceObj = { face: facePh };
     var encryptPrvKey, pubKey;
     if (req.body.option == 'photo') {
         facePh = true;
@@ -378,10 +400,18 @@ app.post('/mpassHdlr', function (req, res) {
             });
             encryptPrvKey = privateKey;
             //pubKey = publicKey;
-            userDbCreate(usName, hashPassw, drvKey, encryptPrvKey, publicKey);//To store User keys data in db
+            const promise3=userKeysCreate(usName, hashPassw, drvKey, encryptPrvKey, publicKey);//To store User keys data in db
             //const userStorage = new Vault('user-storage');
             //userStorage.setItem('publicKey', pubKey);
-            console.log('Promise.all done');
+            Promise.all([promise1, promise3])
+                .then(() => {
+                    console.log('Promise.all (1+3) done');
+                    if (facePh) {
+                        res.redirect('/photoCap');
+                    }
+                    res.render('supSuccess.pug');
+                })
+            
         })
         .catch((error) => {
             console.error('promise.all error: ', error);
@@ -425,10 +455,10 @@ app.post('/mpassHdlr', function (req, res) {
         return hashPassw;
     }
 
-    async function userDbCreate(usName, hashPw, dKey, enPrvKy, pubKey) {
+    async function userKeysCreate(usName, hashPw, dKey, enPrvKy, pubKey) {
         try {
             //UserDb define at line 40
-            const u0 = new UserDb({ userName: usName, hashPassw: hashPw, derivedKey: dKey, encPrvKey: enPrvKy, publicKey: pubKey });
+            const u0 = new UserKeys({ userName: usName, hashPassw: hashPw, derivedKey: dKey, encPrvKey: enPrvKy, publicKey: pubKey });
             await u0.save();
             console.log(`User: ${usName} and encrypted keys added to UserDb`);
 
@@ -438,7 +468,7 @@ app.post('/mpassHdlr', function (req, res) {
 
     }
 });
-app.post('/logPasswHdlr', function (req, res) {
+app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
     var name = uName.getUsername();
     var hashP;
     passwCount += 1;
@@ -451,7 +481,7 @@ app.post('/logPasswHdlr', function (req, res) {
         .then(() => {
             bcrypt.compare(passw, hashP, function (err, result) {
                 if (result == true) {
-                    res.render('validLogin.pug');
+                    res.render('validLogin.pug', {usrObj});
                 } else {
                     if (passwCount < 3) {
                         //console.log('remaing count: ', remCount, 'name: ', name);
@@ -476,17 +506,151 @@ app.post('/logPasswHdlr', function (req, res) {
             console.log(err);
         }
     }
-    async function checkPassw(passwd, hash) {
-        var match = false;
-        match = await bcrypt.compare(passwd, hash)
-        if (match) {
-            return true;
-        } else return false;
-
+        
+});
+app.post('/webAccess', function (req, res) { //Called from validLogin.pug
+    var url;
+    var oldNew = req.body.oldNew;
+    if (oldNew == 'new') {
+        url = req.body.newUrl;
+        urlObj = { url: url };//urlObj is global var
+        let webUn = '';
+        let webPw = '';
+        data.setDataObj(url, webUn, webPw);
+        //indexedDbId += 1;
+        res.render('newUrl.pug', {urlObj});
+        
+    } else if (oldNew == 'old') {
+        res.render('oldUrl.pug');
+        
+    } else {
+        // Handle other cases or provide an appropriate response
+        res.status(400).json({ error: 'Invalid value for oldNew' });
     }
     
-});
-app.get('/ffi', function (req, res) {
+})
+/*app.get('/data', function (req, res) {
+    //res.json(urlObj);
+    res.redirect(urlObj.url);
+}) */
+app.get('/delWebRec', function (req, res) {
+    res.render('delWebRec.pug', {urlObj});
+})
+app.get('/userNameGen', function (req, res) {
+    res.render('unGen.pug');
+})
+app.post('/genWebPw', function (req, res) {
+    const webUserName = req.body.user;
+    const length = req.body.length;
+    var lowCase = true;
+    var upCase = true;
+    var num = true;
+    var spec = true;
+    if (req.body.lowCase === 'no') {
+        lowCase = false;
+    }
+    if (req.body.upCase === 'no') {
+        upCase = false;
+    }
+    if (req.body.numChar === 'no') {
+        num = false;
+    }
+    if (req.body.specChar === 'no') {
+        spec = false;
+    }
+    var password = generator.generate({
+        length: length,
+        lowercase: lowCase,
+        uppercase: upCase,
+        numbers: num,
+        symbols: spec
+
+    })
+    let obj = data.getDataObj();
+    if (urlObj.url === obj.url) { //urlObj is global variable and assigned value in /webAccess
+        data.setDataObj(obj.url, webUserName, password);
+    } else {
+        data.setDataObj(urlObj.url, webUserName, password);//urlObj.url value is set in app.pot(/webAccess) 
+    }
+    let pwObj = data.getDataObj();
+    updUsWebDb(pwObj);
+    console.log('url: ', pwObj.url, ', user name:', webUserName, ', password: ', password);
+    // Display the password and to store login credentials
+    res.render('resultPassw.pug', { pwObj });
+    //function to update UserWebs DB model
+    async function updUsWebDb(obj) {
+        try {
+            //UserDb define at line 40
+            const u0 = new UserWebs({ userName: usName, hashPassw: hashPw, derivedKey: dKey, encPrvKey: enPrvKy, publicKey: pubKey });
+            await u0.save();
+            console.log(`User: ${usName} and encrypted keys added to UserDb`);
+
+        } catch (err) {
+            console.log(err);
+        }
+
+    }
+ })
+app.post('/genWebUn', function (req, res) {
+    var webUserName = '';
+    if (req.body.self) {
+        webUserName = req.body.self;
+    } else {
+        const length = req.body.length;
+        var lowCase = true;
+        var upCase = true;
+        var num = true;
+        var spec = true;
+        if (req.body.lowCase === 'no') {
+            lowCase = false;
+        }
+        if (req.body.upCase === 'no') {
+            upCase = false;
+        }
+        if (req.body.numChar === 'no') {
+            num = false;
+        }
+        if (req.body.specChar === 'no') {
+            spec = false;
+        }
+        webUserName = generator.generate({
+            length: length,
+            lowercase: lowCase,
+            uppercase: upCase,
+            numbers: num,
+            symbols: spec
+
+        })
+    }
+    
+    let obj = data.getDataObj();
+    if (urlObj.url === obj.url) {
+        data.setDataObj(obj.url, webUserName, obj.pwd);
+    } else {
+        data.setDataObj(urlObj.url, webUserName, obj.pwd);
+    }
+    
+    let unObj = data.getDataObj();
+    //webLoginJSON = unObj.stringify();
+    console.log('User Name: ', webUserName, 'url: ', unObj.url);
+    res.render('pwGen.pug', { unObj });//Next go to generating password page
+
+})
+app.get('/oldUrl', function (req, res) {
+    res.render('oldUrl.pug');
+})
+app.get('/newUrl', function (req, res) {
+    res.render('newUrl.pug');
+})
+app.get('/validLogin', function (req, res) {
+    res.render('validLogin.pug');
+})
+app.post('/getWebPwd', function (req, res) {
+    var web = req.body.url;
+    let webObj = { url: web };
+    res.render('getWebPwd.pug', { webObj });
+})
+app.get('/ffi', function (req, res) { //Called from scripts/capPhoto2.js
     var name = uName.getUsername();
     var faceOk = false;
     console.log(`login name: ${name}`);

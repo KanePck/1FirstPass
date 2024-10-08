@@ -1,0 +1,30 @@
+doctype html
+html
+  nav.navbar.navbar-inverse
+  .container-fluid
+      .navbar-header
+          a.navbar-brand(href='/') PwdNoMore Home!
+      ul.nav.navbar-nav
+          li.active
+              a(href='/') Home
+          li
+              a(href='/validLogin') validLogin
+          li
+              a(href='/newUrl') UserName/Password Creation
+        
+      ul.nav.navbar-nav.navbar-right
+  head
+    title To delete previous record of web login credentials 
+    link(rel='stylesheet', href='/stylesheets/main.css')
+    script(src='/scripts/readWebRec.js')
+  body
+    p The web that your login user-name and password to be deleted: #{urlObj.url}
+    p(data-url=urlObj.url) List of user name and password of this website
+    p#none
+    table
+      tbody
+    p Please click DELETE button to delete the login credential from this browser
+    button#delete
+      |DELETE
+    br
+    p#del

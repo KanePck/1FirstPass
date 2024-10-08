@@ -1,0 +1,31 @@
+//Called from webAccess.js
+doctype html
+html
+  nav.navbar.navbar-inverse
+  .container-fluid
+      .navbar-header
+          a.navbar-brand(href='/') PwdNoMore Home!
+      ul.nav.navbar-nav
+          li.active
+              a(href='/') Home
+          li
+              a(href='/validLogin') Valid Login
+          li
+              a(href='/page-2') page2
+        
+      ul.nav.navbar-nav.navbar-right
+  head
+    title Your new websites (Called from /webAccess)
+    link(rel='stylesheet', href='/stylesheets/newUrl.css')
+    script(src='/scripts/newWeb.js')
+  body
+    p The new website that needs new username and password: #{urlObj.url}
+    p Select User Name, which after completed, will continue with password generation
+    div#popupButt
+        button User Name
+        p Select Delete, in case wanting to delete previous web login record of : #{urlObj.url}
+        button Delete
+        
+    div#error-content 
+      class.hidden
+    script(src="/scripts/newWeb.js")
