@@ -24,6 +24,7 @@
     "express-validator": "^7.0.1",
     "ffi-napi": "^4.0.3",
     "g": "^2.0.1",
+    "generate-password": "^1.7.1",
     "jsrsasign": "^11.1.0",
     "jsrsasign-util": "^1.0.5",
     "mongoose": "^8.3.3",

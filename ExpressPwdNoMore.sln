@@ -7,6 +7,8 @@ Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "ExpressPwdNoMore", "Express
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pwdNmLib", "..\pwdNmLib\pwdNmLib\pwdNmLib.vcxproj", "{E011021F-8777-4EE7-BF8D-B18C6ED74497}"
 EndProject
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "pwdNmExtWeb", "..\pwdNmExtWeb\pwdNmExtWeb.esproj", "{E7073284-ECFA-4799-82F9-9BB7F2BAED48}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,20 @@ Global
 		{E011021F-8777-4EE7-BF8D-B18C6ED74497}.Release|x64.Build.0 = Release|x64
 		{E011021F-8777-4EE7-BF8D-B18C6ED74497}.Release|x86.ActiveCfg = Release|Win32
 		{E011021F-8777-4EE7-BF8D-B18C6ED74497}.Release|x86.Build.0 = Release|Win32
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Debug|x86.Build.0 = Debug|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Debug|x86.Deploy.0 = Debug|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Release|x64.ActiveCfg = Release|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Release|x86.ActiveCfg = Release|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Release|x86.Build.0 = Release|Any CPU
+		{E7073284-ECFA-4799-82F9-9BB7F2BAED48}.Release|x86.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

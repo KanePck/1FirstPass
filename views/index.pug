@@ -20,8 +20,8 @@ html
 	body
 		h1 Welcome to PwdNoMore website
 		p.messages#mission How we can serve you:
-			ul.li.list We help you to automate the registration and login to any web page with no more password input to those web sites.
-			ul.li.list Now you only are required to have your face photographed as authorization and access to our web site and we do the rest for you.
+		ul.li.list We help you to automate the registration and login to any web page with no more password input to those web sites.
+		ul.li.list Now you only are required to have your face photographed as authorization and access to our web site and we do the rest for you.
 		p#user Login or Register
 			form(action='/login', method='post') Existing User, please login.
 				br
@@ -30,10 +30,16 @@ html
 				input#uname(type='text' autofocus, name='username' required, value='Your name ')
 				br
 				br
+				p If you signed up with self photo login option, please check box if require this option.
+				label(for='face') Face photo login
+				input#face(type='checkbox', name='faceOption', value='yes')
+				br
+				br
 				div
 				button(type='submit') Login 
 				br
 				br
+		p Sign up
 			form(action='/signup', id='signUp', method='post') New User, please sign up
 				br
 				br
@@ -51,7 +57,5 @@ html
 				br
 				input#phone(type='tel', name='phone', pattern="[+]?[0-9]{1,3}?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}")
 				br
-				//input#photo(type='file', accept='image/*;capture=camera', name='photo' required, )
 				br
-				div
 				button(type='submit') Sign up

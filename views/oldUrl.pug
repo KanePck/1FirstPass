@@ -1,0 +1,28 @@
+//Called from webAccess.js
+doctype html
+html
+  nav.navbar.navbar-inverse
+  .container-fluid
+      .navbar-header
+          a.navbar-brand(href='/') PwdNoMore Home!
+      ul.nav.navbar-nav
+          li.active
+              a(href='/') Home
+          li
+              a(href='/validLogin') Valid Login
+          li
+              a(href='/page-2') Page 2
+        
+      ul.nav.navbar-nav.navbar-right
+  head
+    title List of your active websites under PwdNoMore App
+    link(rel='stylesheet', href='/stylesheets/main.css')
+    script(src='/scripts/oldWeb.js')
+  body
+    p Please click to show list of your active websites
+    button#btn(type='submit') Click
+    .container
+    p#none
+    p#text
+    table
+      tbody

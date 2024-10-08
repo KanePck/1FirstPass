@@ -1,4 +1,4 @@
-//Check two passwords are matched
+//Check two passwords are matched. Called from masterPass.pug
 document.addEventListener('keyup', (event) => {
     let timeout;
     clearTimeout(timeout);
