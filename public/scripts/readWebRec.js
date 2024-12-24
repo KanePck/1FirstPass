@@ -1,7 +1,7 @@
 //Called from delWebRec.pug
 //To retrieve the password of user's login to the web
 document.addEventListener('DOMContentLoaded', () => {
-    const pElement = document.querySelector('p[data-url');
+    const pElement = document.querySelector('p[data-url]');
     const url = pElement.getAttribute('data-url');
     console.log('url: ', url);
     let db;

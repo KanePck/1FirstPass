@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const webBtn = document.getElementById('btn');
     webBtn.addEventListener('click', () => {
-        let db;
+        let db, transaction;
         var urlArr = [];
         let dbName = 'webPwdDB';
         let dbStoreName = 'webDbStore1';//Previous store is webDbStore
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             db = event.target.result;
             try {
-                const transaction = db.transaction(dbStoreName, 'readonly');
+                transaction = db.transaction(dbStoreName, 'readonly');
                 transaction.oncomplete = (event) => {
                     console.log('Database store exists.');
                 }
@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
                        
             const objectStore = transaction.objectStore(dbStoreName);
             const action = objectStore.openCursor();
+            const authTok = localStorage.getItem('authToken');
+            //console.log('Token: ', authTok);
             action.onsuccess = (event) => {
                 const cursor = event.target.result;
                 const non = document.getElementById('none');
@@ -44,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     n += 1;
                     console.log('n: ', n, 'url: ', cell);
                     if (n == 1) {
-                        text.innerHTML = 'Please select which url to obtain the password.';
+                        text.innerHTML = 'Please click O and press select which url to obtain the password.';
                                                 
                     }
                     var tableRow = document.createElement('tr');
@@ -62,9 +64,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     button.form = form;
                     button.type = 'submit';
                     button.textContent = 'Select';
+                    button.name = 'token';
+                    button.value = authTok;
                     form.appendChild(radioInput);
-                    form.appendChild(label);
                     form.appendChild(button);
+                    form.appendChild(label);
                     tableCell.appendChild(form);
                     /*var anchor= document.createElement('a'); //if want to display url link
                     anchor.href = cell;

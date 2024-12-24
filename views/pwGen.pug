@@ -3,28 +3,37 @@ html
   nav.navbar.navbar-inverse
   .container-fluid
       .navbar-header
-          a.navbar-brand(href='/') PwdNoMore Home!
-      ul.nav.navbar-nav
-          li.active
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
               a(href='/') Home
-          li
-              a(href='/validLogin') Valid Login
-          li
-              a(href='/newUrl') UserName/Password Creation
-        
-      ul.nav.navbar-nav.navbar-right
+          colspan.nav
+              a(href='/postLogin') Select Old/New URL
+          colspan.nav
+              a(href='/aboutUs') About us   
+          colspan.nav
+              a(href='/contactUs') Contact us
   head
     title
+    link(rel='stylesheet', href='/stylesheets/oldUrl.css')
+    script(src='/scripts/getToken.js')
   body
+    script.
+          var usrName = localStorage.getItem('usrName');
+          console.log('usrName: ', usrName);
+          document.addEventListener('DOMContentLoaded', function() {
+              document.getElementById('uName').value= usrName;
+          });
   | Password form generation
-  p New User name: #{unObj.webUn}
+  p Web User name: #{unObj.webUn}
   p For Url: #{unObj.url}
   p#passwForm
   form(action='/genWebPw', id='formPassw', method='post') Please specify format of required password.
    br
    br
    li
-     select(name='user')
+     select(name='webUserName')
        option(selected='selected', value=`${unObj.webUn}`) #{unObj.webUn}
        
    li
@@ -66,4 +75,16 @@ html
      br
      button(type='submit') Submit
      br
-     
+     input(type='hidden', name='url', value=`${unObj.url}`)
+     input#uName(type='hidden', name='usrName')
+     input#authToken(type='hidden', name='token')
+  br
+  br
+  footer
+      p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+      address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+      p
+      colspan 
+          a(href='/tnc') Terms&Conditions  
+      colspan 
+          a(href='/privPo') Privacy Policy

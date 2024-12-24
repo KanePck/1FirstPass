@@ -1,17 +1,29 @@
 doctype html
 html
-	head
-		title
-	body
-		h1 Error message!
-		if errors
-			ul
-			for error in errors
-				li!=error.path+": "+ error.value+ "; Error message: "+error.msg
-		h2 Back to Home/signup page
-		ul.nav.navbar-nav
-			li.active
-				a(href='/') Home
-				
-		
-			
+    nav.navbar.navbar-inverse
+    .container-fluid
+      .navbar-header
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
+              a(href='/') Home
+          colspan.nav
+              a(href='/aboutUs') About us   
+          colspan.nav
+              a(href='/contactUs') Contact us
+    head
+        title
+        link(rel='stylesheet', href='/stylesheets/main.css')
+    body
+        h1 #{message}
+    br
+    br
+    footer
+        p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+        address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+        p
+        colspan 
+            a(href='/tnc') Terms&Conditions  
+        colspan 
+            a(href='/privPo') Privacy Policy		

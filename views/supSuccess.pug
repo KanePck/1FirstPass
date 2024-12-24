@@ -4,22 +4,21 @@ html
 	nav.navbar.navbar-inverse
 	.container-fluid
 		.navbar-header
-			a.navbar-brand(href='/') PwdNoMore login page!
-		ul.nav.navbar-nav
-			li.active
-				a(href='/') Home
-			li
-				a(href='/page-1') Page 1
-			li
-				a(href='/page-2') Page 2
-        
-		ul.nav.navbar-nav.navbar-right
+		p.nav.navbar-nav
+			a(href='/')
+				img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+			colspan.nav
+				a(href='/') Home   
+			colspan.nav
+				a(href='/aboutUs') About us   
+			colspan.nav
+				a(href='/contactUs') Contact us 
 	head
 		title Password No More
 		link(rel='stylesheet', href='/stylesheets/main.css')
 	body
 		h1 You have succesfully signed up with the site. 
-        p Now you can start login and enjoy our service.
+		p Now you can start login and enjoy our service.
 		p#user Login 
 			form(action='/login', method='post') Existing User, please login.
 				br
@@ -28,7 +27,22 @@ html
 				input#uname(type='text' autofocus, name='username' required, value='Your name ')
 				br
 				br
+				p If you signed up with self photo login option, please check box if require this option.
+				label(for='face') Face photo login
+				input#face(type='checkbox', name='faceOption', value='yes')
+				br
+				br
 				div
 				button(type='submit') Login 
 				br
 				br
+	br
+	br
+	footer
+		p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+		address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+		p
+		colspan 
+			a(href='/tnc') Terms&Conditions  
+		colspan 
+			a(href='/privPo') Privacy Policy

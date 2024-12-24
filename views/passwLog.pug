@@ -1,19 +1,50 @@
 //Called from login.js
 doctype html
 html
+nav.navbar.navbar-inverse
+    .container-fluid
+        .navbar-header
+        p.nav.navbar-nav
+            a(href='/')
+                img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+            colspan.nav
+                a(href='/') Home   
+            colspan.nav
+                a(href='/aboutUs') About us   
+            colspan.nav
+                a(href='/contactUs') Contact us
 head
 Title User to provide a login password
-link(rel='stylesheet', href='/stylesheets/photoCap.css')
+link(rel='stylesheet', href='/stylesheets/main.css')
 body
- .contentarea
+  script.
+        var sid=localStorage.getItem('sessionId');
+        console.log('sid: ', sid);
+        document.addEventListener('DOMContentLoaded', function() {
+           document.getElementById('sid').value = sid;
+        });
+  .contentarea
   h1 User login password is required and you have 3 attempts to login.
   p#passw 
-        form(action='/logPasswHdlr', id='passw', method='post') #{username}, please input valid password
+        form(action='/logPasswHdlr', id='passwd', method='post') #{username}, please input valid password
+                br
+                input#name(checked='checked', name='username', type='radio', value=`${username}`)
                 br
                 br
                 label(for='passw') Password: (8-16 characters) 
                 br
-                input#passw(type='password', name='password' required, minlength='8', maxlength='16', value='')
+                input#passw(type='password', name='loginPassword' required, minlength='8', maxlength='16', value='')
                 br
                 br
                 button(type='submit') Submit
+                input#sid(type='hidden', name='sessionId')
+br
+br
+footer
+    p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+    address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+    p
+    colspan 
+        a(href='/tnc') Terms&Conditions  
+    colspan 
+        a(href='/privPo') Privacy Policy

@@ -3,17 +3,29 @@ html
   nav.navbar.navbar-inverse
   .container-fluid
       .navbar-header
-          a.navbar-brand(href='/') PwdNoMore Home!
-      ul.nav.navbar-nav
-          li.active
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
               a(href='/') Home
-          li
-              a(href='/validLogin') Valid Login
-                  
-      ul.nav.navbar-nav.navbar-right
+          colspan.nav
+              a(href='/postLogin') Select Old/New URL
+          colspan.nav
+                a(href='/aboutUs') About us   
+          colspan.nav
+                a(href='/contactUs') Contact us
   head
     title
+    link(rel='stylesheet', href='/stylesheets/oldUrl.css')
+    script(src='/scripts/getToken.js')
   body
+    script.
+          var newUrl = localStorage.getItem('newUrl');
+          console.log('newUrl: ', newUrl);
+          document.addEventListener('DOMContentLoaded', function() {
+              document.getElementById('newUrl').value= newUrl;
+          });
+  .contentarea
   | User name form generation
   p#passwForm
   form(action='/genWebUn', id='formUserN', method='post') Please enter self user name or format for auto-creation of user name.
@@ -67,4 +79,15 @@ html
      br
      button#auto(type='submit') Submit
      br
-     
+     input#newUrl(type='hidden', name='newUrl')
+     input#authToken(type='hidden', name='token')
+  br
+  br
+  footer
+      p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+      address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+      p
+      colspan 
+          a(href='/tnc') Terms&Conditions  
+      colspan 
+          a(href='/privPo') Privacy Policy

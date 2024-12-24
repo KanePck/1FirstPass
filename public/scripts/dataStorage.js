@@ -67,7 +67,7 @@ function storePassword(pwJs) {
 
             }
         };
-        objectStore.onerror = (event) => {
+        action.onerror = (event) => { //previously objectStore.onerror
             console.log('Retrieving data error: ', this.error);
         };
 

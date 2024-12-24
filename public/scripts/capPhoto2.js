@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const startButton = document.getElementById('startButton');
     const photoButton = document.getElementById('photoButton');
     const stopButton = document.getElementById('stopButton');
+    const h1Element = document.querySelector('h1[data-usrName]');
+    const usrName = h1Element.getAttribute('data-usrName');
+    console.log('usrName in capPhoto2: ', usrName);
     let stream = null;
     let photNo = 1;
 
@@ -65,7 +68,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         //photo.style.display = 'inline-block';
         // Check if imageDataUrl is defined before calling savePhoto
         if (imageDataUrl) {
-            imageObj = { image: imageDataUrl, Number: photNo };
+            imageObj = { Image: imageDataUrl, Number: photNo, User: usrName };
             savePhoto(imageObj);
             
         }
@@ -98,7 +101,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
             })
             .then(data => {
                 console.log('Image saving process:', data);
-                window.location.href = '/ffi';
+                // Convert the server response data object to a query string 
+                const queryString = new URLSearchParams(data).toString();
+                // Redirect to the next page with data in query string 
+                window.location.href = `/ffi?${queryString}`;
             })
             .catch(error => {
                 console.error('Error saving the image:', error);

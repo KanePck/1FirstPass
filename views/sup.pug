@@ -1,7 +1,20 @@
 doctype html
 html
+	nav.navbar.navbar-inverse
+	.container-fluid
+		.navbar-header
+		p.nav.navbar-nav
+			a(href='/')
+				img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+			colspan.nav
+				a(href='/') Home   
+			colspan.nav
+				a(href='/aboutUs') About us   
+			colspan.nav
+				a(href='/contactUs') Contact us   
 	head
 		| Signing up/Registration complete
+		link(rel='stylesheet', href='/stylesheets/main.css')
 	body
 		h1 Your signing up has been completed.
 		p#user Please Login 
@@ -12,8 +25,22 @@ html
 				input#uname(type='text' autofocus, name='username' required, value='Your name ')
 				br
 				br
+				p If you signed up with self photo login option, please check box if require this option.
+				label(for='face') Face photo login
+				input#face(type='checkbox', name='faceOption', value='yes')
+				br
+				br
 				div
 				button(type='submit') Login 
 				br
 				br
-		
+	br
+	br
+	footer
+		p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+		address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+		p
+		colspan 
+			a(href='/tnc') Terms&Conditions  
+		colspan 
+			a(href='/privPo') Privacy Policy		
