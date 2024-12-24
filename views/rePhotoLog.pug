@@ -1,13 +1,25 @@
 doctype html
 html
+  nav.navbar.navbar-inverse
+  .container-fluid
+      .navbar-header
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
+              a(href='/') Home
+          colspan.nav
+                a(href='/aboutUs') About us   
+          colspan.nav
+                a(href='/contactUs') Contact us 
 head
 Title User self photo session
 link(rel='stylesheet', href='/stylesheets/photoCap.css')
 script(src='/scripts/capPhoto2.js')
 body
  .contentarea
-  h1 Your face login fails.
-  p You have #{remObj.Remain} remaining attempts. Please do again.
+  h1(data-usrName=username) Your face login fails.
+  p #{username}, you have #{remObj.Remain} remaining attempts. Please do again.
   p Please align your face inside the rectangular.
   script(src='/scripts/camOn.js')
   button#startButton
@@ -28,4 +40,14 @@ body
      div#face-guide
      canvas#canvas.inline      
         .output
-          img#photo(alt="The screen capture will appear in this box.")    
+          img#photo(alt="The screen capture will appear in this box.")
+  br
+  br
+  footer
+      p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+      address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+      p
+      colspan 
+          a(href='/tnc') Terms&Conditions  
+      colspan 
+          a(href='/privPo') Privacy Policy

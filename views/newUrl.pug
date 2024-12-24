@@ -4,22 +4,25 @@ html
   nav.navbar.navbar-inverse
   .container-fluid
       .navbar-header
-          a.navbar-brand(href='/') PwdNoMore Home!
-      ul.nav.navbar-nav
-          li.active
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
               a(href='/') Home
-          li
-              a(href='/validLogin') Valid Login
-          li
-              a(href='/page-2') page2
-        
-      ul.nav.navbar-nav.navbar-right
+          colspan.nav
+              a(href='/postLogin') Select Old/New URL
+          colspan.nav
+                a(href='/aboutUs') About us   
+          colspan.nav
+                a(href='/contactUs') Contact us  
+ 
   head
     title Your new websites (Called from /webAccess)
     link(rel='stylesheet', href='/stylesheets/newUrl.css')
     script(src='/scripts/newWeb.js')
+	
   body
-    p The new website that needs new username and password: #{urlObj.url}
+    h1(data-newUrl=urlObj.url) The new website that needs new username and password: #{urlObj.url}
     p Select User Name, which after completed, will continue with password generation
     div#popupButt
         button User Name
@@ -29,3 +32,13 @@ html
     div#error-content 
       class.hidden
     script(src="/scripts/newWeb.js")
+    br
+    br
+    footer
+        p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+        address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+        p
+        colspan 
+            a(href='/tnc') Terms&Conditions  
+        colspan 
+            a(href='/privPo') Privacy Policy

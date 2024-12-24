@@ -1,12 +1,32 @@
 //Called from logPasswHdlr.js
 doctype html
 html
+  nav.navbar.navbar-inverse
+  .container-fluid
+      .navbar-header
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
+              a(href='/') Home
+          colspan.nav
+              a(href='/aboutUs') About us   
+          colspan.nav
+              a(href='/contactUs') Contact us 
   head Fail 3 attempts password log in
-    title
+  title
+  link(rel='stylesheet', href='/stylesheets/main.css')
   body
   h1 Sorry! you have failed password logging in 3 attempts
   script(src='/scripts/camOff.js')
-  h2 Back to Home/signup page
-     ul.nav.navbar-nav
-        li.active
-           a(href='/') Home
+  h2 Please go back to Home/login and signup page
+  br
+  br
+  footer
+      p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+      address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+      p
+      colspan 
+          a(href='/tnc') Terms&Conditions  
+      colspan 
+          a(href='/privPo') Privacy Policy

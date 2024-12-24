@@ -7,6 +7,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const startButton = document.getElementById('startButton');
     const photoButton = document.getElementById('photoButton');
     const stopButton = document.getElementById('stopButton');
+    const h1Element = document.querySelector('h1[data-usrName]');
+    const usrName = h1Element.getAttribute('data-usrName');
+    const mess = document.getElementById('message');
+    console.log('usrName in capPhoto1: ', usrName);
     let stream = null; 
 
     startButton.addEventListener('click', () => {
@@ -67,8 +71,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
         //photo.style.display = 'inline-block';
         // Check if imageDataUrl is defined before calling savePhoto
         if (imageDataUrl) {
-            imageObj = { image: imageDataUrl, Number: photNo};
+            imageObj = { Image: imageDataUrl, Number: photNo, User: usrName};
             savePhoto(imageObj);
+            mess.innerHTML=`Photo no. ${photNo} saved successfully.`
             if (photNo == 3) {
                 window.location.href = '/sup';
             }

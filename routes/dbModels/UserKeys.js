@@ -11,4 +11,4 @@ const userKeysSchema = new Schema({
     usrFilePath: { type: String, required: false },
     opSys: { type: String, required: false },
 });
-module.exports = mongoose.model('db', userKeysSchema);
+module.exports = mongoose.model('UserKeys', userKeysSchema);

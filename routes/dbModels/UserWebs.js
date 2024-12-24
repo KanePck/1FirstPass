@@ -5,10 +5,10 @@ const Schema = mongoose.Schema;
 const userWebsSchema = new Schema({
     userName: { type: String, required: true },
     webUrl: { type: Array, required: true },
-    browser: { type: String, required: true },
-    os: { type: String, required: true },
-    cpu: { type: String, required: true },
+    browser: { type: String, required: false },
+    os: { type: String, required: false },
+    cpu: { type: String, required: false },
     device: { type: String, required: false },
     engine: { type: String, required: false },
 });
-module.exports = mongoose.model('db', userWebsSchema);
+module.exports = mongoose.model('UserWebs', userWebsSchema);

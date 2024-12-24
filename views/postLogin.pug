@@ -1,4 +1,3 @@
-//Called from logPasswHdlr.js
 doctype html
 html
     nav.navbar.navbar-inverse
@@ -14,17 +13,11 @@ html
             colspan.nav
                 a(href='/contactUs') Contact us
     head
-        title Login complete
-        link(rel='stylesheet', href='/stylesheets/main.css')
-        script(src='/scripts/sessLocStore.js')
+        title postLogin 
+        link(rel='stylesheet', href='/stylesheets/main.css')       
     body
-        h1(data-uid=usrData.id) Your login has been completed and valid.
-        ul Please continue to use following Browser/OS/CPU in order not to lose your websites records:
-            li Browser: #{userAgent.Browser}
-            li OS: #{userAgent.OS}
-            li CPU: #{userAgent.CPU}
-        p(data-uname=usrData.username) Do you want to log in to old website or sign up to new website: 
-        div(data-auth=authTok)
+        h1 Your login has been completed and valid.
+        p Do you want to log in to old website or sign up to new website: 
         form(action='/webAccess', method='post') Please select: 
             br
             br

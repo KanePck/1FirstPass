@@ -4,19 +4,21 @@ html
   nav.navbar.navbar-inverse
   .container-fluid
       .navbar-header
-          a.navbar-brand(href='/') PwdNoMore Home!
-      ul.nav.navbar-nav
-          li.active
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
               a(href='/') Home
-          li
-              a(href='/validLogin') Valid Login
-          li
-              a(href='/page-2') Page 2
-        
-      ul.nav.navbar-nav.navbar-right
+          colspan.nav
+              a(href='/postLogin') Select Old/New URL
+          colspan.nav
+              a(href='/aboutUs') About us   
+          colspan.nav
+              a(href='/contactUs') Contact us
+ 
   head
-    title List of your active websites under PwdNoMore App
-    link(rel='stylesheet', href='/stylesheets/main.css')
+    title List of your active websites under 1FirstPass App
+    link(rel='stylesheet', href='/stylesheets/oldUrl.css')
     script(src='/scripts/oldWeb.js')
   body
     p Please click to show list of your active websites
@@ -26,3 +28,13 @@ html
     p#text
     table
       tbody
+    br
+    br
+    footer
+        p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+        address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+        p
+        colspan 
+            a(href='/tnc') Terms&Conditions  
+        colspan 
+            a(href='/privPo') Privacy Policy

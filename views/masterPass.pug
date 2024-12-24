@@ -1,15 +1,27 @@
 //Called from supPassw.js
 doctype html
 html
-head
-Title User to provide a master password
-link(rel='stylesheet', href='/stylesheets/main.css')
-body
- .contentarea
+  nav.navbar.navbar-inverse
+  .container-fluid
+      .navbar-header
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
+              a(href='/') Home
+          colspan.nav
+              a(href='/aboutUs') About us   
+          colspan.nav
+              a(href='/contactUs') Contact us 
+  head
+    Title User to provide a master password
+    link(rel='stylesheet', href='/stylesheets/main.css')
+  body
+  .contentarea
   h1 Master password is required and self photo is optional.
   p The password is to have total at least 8 and no more than 16 letters including small, capital letters, number and special characters.
   p#passw 
-        form(action='/mpassHdlr', id='passw', method='post') New User, please input new password
+        form(action='/mpassHdlr', id='passw', method='post') #{username}, New User: please input new password
                 br
                 br
                 label(for='passw') Password: (8-16 characters) 
@@ -30,6 +42,17 @@ body
                 | Option self photo
                 input#noPhoto(checked='checked', name='option', type='radio', value='noPhoto')
                 | No self photo
+                input(type='hidden', name= 'usrName', value=`${username}`)
                 br
                 br
                 button(type='submit') Submit
+  br
+  br
+  footer
+      p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+      address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+      p
+      colspan 
+          a(href='/tnc') Terms&Conditions  
+      colspan 
+          a(href='/privPo') Privacy Policy

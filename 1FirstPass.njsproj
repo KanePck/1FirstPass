@@ -3,15 +3,18 @@
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">14.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
-    <Name>ExpressPwdNoMore</Name>
+    <Name>1FirstPass</Name>
     <RootNamespace>ExpressPwdNoMore</RootNamespace>
+    <LaunchUrl>https://localhost:1337</LaunchUrl>
+    <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>a43bf7dd-c979-436e-86ac-9c995a3bee3e</ProjectGuid>
-    <ProjectHome>.</ProjectHome>
+    <ProjectHome>
+    </ProjectHome>
     <StartupFile>app.js</StartupFile>
     <SearchPath>
     </SearchPath>
@@ -20,7 +23,7 @@
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <ProjectTypeGuids>{3AF33F2E-1136-4D97-BBB7-1795711AC8B8};{349c5851-65df-11da-9384-00065b846f21};{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}</ProjectTypeGuids>
     <NodejsPort>1337</NodejsPort>
-    <StartWebBrowser>true</StartWebBrowser>
+    <StartWebBrowser>True</StartWebBrowser>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -59,6 +62,9 @@
     <Content Include="public\scripts\deleteWebRec.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="public\scripts\getToken.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="public\scripts\newWeb.js">
       <SubType>Code</SubType>
     </Content>
@@ -68,13 +74,25 @@
     <Content Include="public\scripts\readWebRec.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="public\scripts\reValidLogin.js">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="public\scripts\sessLocStore.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="public\scripts\webPwd.js">
       <SubType>Code</SubType>
     </Content>
     <Content Include="public\stylesheets\newUrl.css">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="public\stylesheets\oldUrl.css">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="public\stylesheets\photoCap.css">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="routes\cleanTest.js">
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\data.js">
@@ -133,6 +151,9 @@
     <Content Include="routes\photoCap.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="routes\postLogin.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="routes\resultPassw.js">
       <SubType>Code</SubType>
     </Content>
@@ -140,6 +161,10 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\saveImage.js">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="routes\session.js" />
+    <Content Include="routes\sessionInit.js">
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\signup.js">
@@ -164,6 +189,12 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\webAccess.js">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\aboutUs.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\contactUs.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\delWebRec.pug">
@@ -208,6 +239,12 @@
     <Content Include="views\photoLog.pug">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="views\postLogin.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\privPo.pug">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="views\pwGen.pug">
       <SubType>Code</SubType>
     </Content>
@@ -220,13 +257,13 @@
     <Content Include="views\resultPassw.pug">
       <SubType>Code</SubType>
     </Content>
-    <Content Include="views\resultWebUn.pug">
-      <SubType>Code</SubType>
-    </Content>
     <Content Include="views\sup.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\supSuccess.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\tnc.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\unGen.pug">

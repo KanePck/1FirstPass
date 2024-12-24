@@ -1,25 +1,37 @@
 //Called from login.js
 doctype html
 html
-head
-Title User self photo session
-link(rel='stylesheet', href='/stylesheets/photoCap.css')
-script(src='/scripts/capPhoto2.js')
-body
- .contentarea
-  h1 Still photo capture
-  p Please take a photo of yourself.
+  nav.navbar.navbar-inverse
+  .container-fluid
+      .navbar-header
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
+              a(href='/') Home
+          colspan.nav
+              a(href='/aboutUs') About us   
+          colspan.nav
+              a(href='/contactUs') Contact us 
+  head
+    Title User self photo session
+    link(rel='stylesheet', href='/stylesheets/photoCap.css')
+    script(src='/scripts/capPhoto2.js')
+  body
+  .contentarea
+  h1(data-usrName=username)  Still photo capture
+  p #{username}, please take a photo of yourself.
   p Please align your face inside the rectangular.
   button#startButton
-      |1.Start camera
+     |1.Start camera
   br
   br
   button#photoButton
-      |2.Take photo
+     |2.Take photo
   br
   br
   button#stopButton
-      |3.Stop camera
+     |3.Stop camera
   br
   br
   .camera
@@ -28,4 +40,14 @@ body
      div#face-guide
      canvas#canvas.inline      
         .output
-          img#photo(alt="The screen capture will appear in this box.")    
+          img#photo(alt="The screen capture will appear in this box.")
+  br
+  br
+  footer
+      p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+      address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+      p
+      colspan 
+          a(href='/tnc') Terms&Conditions  
+      colspan 
+          a(href='/privPo') Privacy Policy

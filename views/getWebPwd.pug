@@ -3,21 +3,41 @@ html
   nav.navbar.navbar-inverse
   .container-fluid
       .navbar-header
-          a.navbar-brand(href='/') PwdNoMore Home!
-      ul.nav.navbar-nav
-          li.active
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
               a(href='/') Home
-          li
-              a(href='/validLogin') Valid Login
-          li
-              a(href='/page-2') Page 2
-        
-      ul.nav.navbar-nav.navbar-right
+          colspan.nav
+              a(href='/postLogin') Select Old/New URL
+          colspan.nav
+              a(href='/aboutUs') About us   
+          colspan.nav
+              a(href='/contactUs') Contact us
+ 
   head
     title To retrieve the password
-    link(rel='stylesheet', href='/stylesheets/main.css')
+    link(rel='stylesheet', href='/stylesheets/oldUrl.css')
     script(src='/scripts/webPwd.js')
   body
   p(data-url=webObj.url) The website that you requested: #{webObj.url}
   table
     tbody
+  p If you want to browse to new URL page, please press new URL button to open new url page.
+  button#newWin
+   | New Window: #{webObj.url}
+  script.
+    const newUrl='#{webObj.url}';
+    document.getElementById('newWin').addEventListener('click', function() {
+      window.open(newUrl);
+    });
+  br
+  br
+  footer
+    p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+    address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+    p
+      colspan 
+          a(href='/tnc') Terms&Conditions  
+      colspan 
+          a(href='/privPo') Privacy Policy

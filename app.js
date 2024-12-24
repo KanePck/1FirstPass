@@ -1,18 +1,22 @@
 'use strict';
-var debug = require('debug')('my express app');
+require('dotenv').config();
 var express = require('express');
 var path = require('path');
-var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-require('dotenv').config();
+var uaParser = require('ua-parser-js');
+
 const ffin = require('ffi-napi');
 const ref = require('ref-napi');
 const bcrypt = require('bcrypt');
 const generator = require('generate-password');
-//const { Buffer } = require('buffer');//Node.js
-const uaParser = require('ua-parser-js');
+const session = require('express-session');
+const crypto = require('crypto');
+const mongoDBStore = require('connect-mongodb-session')(session);
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
 var app = express();
 
 var routes = require('./routes/index');
@@ -38,31 +42,33 @@ var oldUrl = require('./routes/oldUrl');
 var newUrl = require('./routes/newUrl');
 var validLogin = require('./routes/validLogin');
 var getWebPwd = require('./routes/getWebPwd');
+var sessionInit = require('./routes/sessionInit');
+var postLogin = require('./routes/postLogin');
 var label = 1; //label of each user photo used in /saveImage
 var count = 1; // no of times user do face login used in /ffi
 var passwCount = 0; // no of times user do password login used in /logPasswHdlr
-var urlObj;
-//var indexedDbId = 1; //unique id for browser indexed db key
+var urlObj, sessMgr;
+//var uri = process.env.mongodbUri;
 //var webLoginJSON = { 'url':'', 'WebUserName': '', 'WebPassword': '' };
 //var document = new Document();
 const { body, validationResult } = require("express-validator");
 const { isLength } = require('validator');
 const { isEmail } = require('validator');
-const asyncHandler = require("express-async-handler");
 const { checkSchema, matchedData } = require('./node_modules/express-validator/src/index');
 const Users = require('./routes/dbModels/Users');
 const UserKeys = require('./routes/dbModels/UserKeys');
 const UserWebs = require('./routes/dbModels/UserWebs');
-const fs = require('fs');
 const uName = require('./routes/uName');
 const data = require('./routes/data');
+const sess = require('./routes/session');
+//console.log('Environment Variables:', process.env);
 
 // Set up mongoose connection
 const mongoose = require("mongoose");
 mongoose.set("strictQuery", false);
 async function connectDb() {
     try {
-        await mongoose.connect(process.env.mongodbUri);
+        await mongoose.connect(process.env.mongodbUri);//define in .env file in ExpressPwdNoMore folder
         console.log('MongoDB connected');
     }   catch (err) {
         console.log(err);
@@ -100,9 +106,33 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '50mb' })); // To handle large payloads
 
+//To create a session using app.use((session))
+//secretKey in window environment variables under advance setting/user variables (not .env file)
+const secretKey = process.env.secretKey || crypto.randomBytes(64).toString('hex');
+var uri = process.env.mongodbUri;
+connectDb();
+var store = new mongoDBStore({
+    uri: uri,
+    collection: 'mySession'
+});
+store.on('error', function (error) {
+    console.log(error);
+});
+app.use(session({ //initialize session
+    genid: function (req) {
+        return crypto.randomUUID() // use UUIDs for session IDs
+    },
+    secret: secretKey,
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
+    },
+    store: store,
+    resave: true, // required: force lightweight session keep alive (touch)
+    saveUninitialized: true, //  recommended false: only save session when data exists
+
+})) //End of creation of app.use((session))
 app.use('/', routes);
 app.use('/signup', signup);
-//app.use('/users', users);
 app.use('/error', err);
 app.use('/photoCap', photoCap);
 app.use('/saveImage', saveImage);
@@ -124,14 +154,74 @@ app.use('/oldUrl', oldUrl);
 app.use('/newUrl', newUrl);
 app.use('/validLogin', validLogin);
 app.use('/getWebPwd', getWebPwd);
+app.use('/sessionInit', sessionInit);
+app.use('/postLogin', postLogin);
+
+//To set up https environment
+const PORT = process.env.PORT || 1337;
+const hostname = process.env.HOSTNAME || 'localhost';
+const isHttps = process.env.HTTPS === 'true';
+if (isHttps) {
+    const sslKey = fs.readFileSync(process.env.SSL_KEY_PATH, 'utf8');
+    const sslCert = fs.readFileSync(process.env.SSL_CERT_PATH, 'utf8');
+    const options = {
+        key: sslKey,
+        cert: sslCert
+    };
+
+    https.createServer(options, app).listen(PORT, () => {
+        console.log(`HTTPS Server running on hostname ${hostname}, port ${PORT}`);
+    });
+} else {
+    http.createServer(app).listen(PORT, () => {
+        console.log(`HTTP Server running on port ${PORT}`);
+    });
+} //end of https set up
+// Redirect HTTP to HTTPS
+app.use((req, res, next) => {
+    if (!req.secure) {
+        return res.redirect('https://' + req.headers.host + req.url);
+    }
+    next();
+});
 app.get('/', function (req, res) {
     console.log(req.body);
-   
 });
 app.post('/', function (req, res) {
     console.log(req.body);
     res.redirect("/signup");
 });
+app.get('/sessionInit', function (req, res) {
+    console.log('inside middleware');
+    var userUUID;
+    if (req.session) {
+        const sessId = req.sessionID;
+        req.session.timestamp = new Date().toISOString();
+        req.session.login = false;
+        const sessObj = { sessionId: req.sessionID, timestamp: req.session.timestamp, login: req.session.login };
+        console.log('sessId: ', sessObj.sessionId, ', times: ', req.session.timestamp);
+        //To create persistent user unique id to check if returning user
+        if (!req.cookies.userUUID) {
+            userUUID = crypto.randomUUID();
+            res.cookie('userUUID', userUUID, { maxAge: 1000 * 60 * 60 * 24 * 365, httpOnly: true }); // 1 year
+            req.session.newVisitor = true;
+            console.log('New user, setting UUID:', userUUID);
+        } else {
+            console.log('Returning user, UUID:', req.cookies.userUUID);
+            userUUID = req.cookies.userUUID;
+            req.session.newVisitor = false;
+        }
+        const uuidObj = { uuid: userUUID };
+        res.render('index.pug', { sessObj, uuidObj });
+    } else {
+        res.status(400).send('No active session');
+    }
+
+});
+app.get('/postLogin', (req, res) => {
+    res.render('postLogin.pug');
+});
+
 app.get('/signup', function (req, res) {
     console.log(req.body);
     
@@ -192,11 +282,11 @@ app.post('/signup', checkSchema({
                 });
             }
             async function handleReq(req) {
-                await deleteRec(); // To delete some db records
+                //await deleteRec(); // To delete some db records
                 var dup = await checkDuplicate(req.body);
                 if (dup === true) {
                     console.log(`${req.body.username} is duplicate name.`);
-                    Promise.allSettled([promise1])
+                    /*Promise.allSettled([promise1])
                         .then(results => {
                             // results is an array containing the resolved values of each promise
                             console.log('All operations completed:', results);
@@ -207,10 +297,11 @@ app.post('/signup', checkSchema({
                         .catch(error => {
                             // If any of the promises reject, this catch block will execute
                             console.error('An error occurred:', error);
-                        });
+                        });*/
                     //await closeDB(); // Now it's safe to close the connection
                     //console.log('Connection to db closed successfully.');
-                    res.render('err.pug');
+                    const message = 'User name duplicate, please input new user name.';
+                    res.render('err.pug', {message});
                 } else {
                     // Using Promise.all to execute all async operations and wait for them to complete
                     const promise2 = userCreate(req.body);//To create user credentials database
@@ -228,8 +319,9 @@ app.post('/signup', checkSchema({
                     //await closeDB(); // Now it's safe to close the connection
                     //console.log('Connection to db closed successfully.');
                     //body: JSON.stringify(body.username);
-                    uName.setUsername(req.body.username);
-                    res.redirect('/supPassw');
+                    const usrName = req.body.username;
+                    uName.setUsername(usrName);
+                    res.render('masterPass.pug', {username: usrName});
                 }
             }
             handleReq(req);
@@ -239,18 +331,11 @@ app.post('/signup', checkSchema({
     },
     
 );
-app.get('/photoCap', function (req, res) {
-    res.render('photoCap.pug', { title: 'User to take self photo' })
-
-});   
-app.get('/supPassw', function (req, res) {
-    res.render('masterPass.pug', { title: 'User to provide master password' })
-});
 
 app.post('/saveImage', (req, res) => {
-    const dataUrl = req.body.image;
+    const dataUrl = req.body.Image;
     const base64Data = dataUrl.replace(/^data:image\/png;base64,/, ''); // Remove the data URL prefix
-    const name = uName.getUsername();
+    const name = req.body.User;
     var phoNo = req.body.Number;
     //var label = req.body.Label;
     const absolutePath = path.join(__dirname, 'public', 'images', 'idenPhoto', `${name}${phoNo}.png`);
@@ -269,7 +354,7 @@ app.post('/saveImage', (req, res) => {
         });
         if (phoNo == 3) {
             label += 1;
-            res.redirect('/sup');
+            res.render('supSuccess.pug');
         } 
         
     });
@@ -282,6 +367,7 @@ app.post('/login', function (req, res) { //Called from index.pug
     const faceReq = req.body.faceOption;
     let faceDb = false;
     let face = false;
+    console.log('faceR: ', faceReq);
     if (faceReq === 'yes') {
         face = true;
     }
@@ -304,23 +390,25 @@ app.post('/login', function (req, res) { //Called from index.pug
             //go to take photo
             console.log('Name exists');
             uName.setUsername(req.body.username);
+            console.log('faceIn: ', face, ' faceDB: ', faceDb);
             if (face&&faceDb) {
-                res.render('photoLog.pug');
+                res.render('photoLog.pug', { username: name });
             } else {
                 res.render('passwLog.pug', {username: name });
             }
             
         } else {
-            res.send('User name not exists.')
+            const message = 'User name not exists.';
+            res.render('err.pug', { message });
             console.log('Name not exist');
         }
     }
     checkReq();
 });
 app.post('/saveFaceLn', (req, res) => { //Called from scripts/capPhoto2.js
-    const dataUrl = req.body.image;
+    const dataUrl = req.body.Image;
     const base64Data = dataUrl.replace(/^data:image\/png;base64,/, ''); // Remove the data URL prefix
-    const name = uName.getUsername();
+    const name = req.body.User;
     var phoNo = req.body.Number;
     //var label = req.body.Label;
     const absolutePath = path.join(__dirname, 'public', 'images', 'loginPhoto', `${name}.png`);
@@ -331,8 +419,11 @@ app.post('/saveFaceLn', (req, res) => { //Called from scripts/capPhoto2.js
             return res.status(500).send('Error saving the image');
         }
         console.log(`Image ${phoNo} saved successfully`);
+        const responseData = {
+            usrName: name,
+        }
         // Send a JSON response indicating success
-        res.json({ message: `Image ${phoNo} saved successfully` });
+        res.json(responseData);
     });
 });
 app.post('/mpassHdlr', function (req, res) {
@@ -341,6 +432,8 @@ app.post('/mpassHdlr', function (req, res) {
     //import Vault from 'vault-storage/vault';
     const passw1 = req.body.password;
     const passw2 = req.body.cPassw;
+    const usName = req.body.usrName;
+    console.log('getUsername done.');
     const regExp = /[A - Za - z0 - 9]/;
     const specReg = /[^a - zA - Z0 - 9\s]/;
     let facePh = false;
@@ -351,7 +444,7 @@ app.post('/mpassHdlr', function (req, res) {
     }
 
     if (passw1 != passw2) {
-        return res.render('mpassErr.pug');
+        return res.render('mpassErr.pug', {username: usName});
     }
     // Regular expression for capital letters
     const capitalRegExp = /[A-Z]/;
@@ -366,11 +459,10 @@ app.post('/mpassHdlr', function (req, res) {
     const strongPasswordRegExp = new RegExp('^(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[!@#$%^&*()_+\-=\[\]{};:\'"?/?.<>|,\\]).{8,}$');
 
     if (!capitalRegExp.test(passw1) || !numberRegExp.test(passw1) || !specialCharRegExp.test(passw1) || passw1.length < 8) {
-        return res.render('passwNotStrong.pug');
+        return res.render('passwNotStrong.pug', {username: usName});
     }
     console.log('passwork check complete');
-    const usName = uName.getUsername();
-    console.log('getUsername done.');
+    
     //To get option of face photo
     updDbFace();
     var salt, hashPassw;
@@ -407,7 +499,8 @@ app.post('/mpassHdlr', function (req, res) {
                 .then(() => {
                     console.log('Promise.all (1+3) done');
                     if (facePh) {
-                        res.redirect('/photoCap');
+                        res.render('photoCap.pug', { username: usName });
+                        return;
                     }
                     res.render('supSuccess.pug');
                 })
@@ -469,19 +562,37 @@ app.post('/mpassHdlr', function (req, res) {
     }
 });
 app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
-    var name = uName.getUsername();
-    var hashP;
+    const name = req.body.username;
+    const sessId = req.body.sessionId;
+    console.log('name: ', name, ', session id: ', sessId);
+    var hashP, authTok, usrData, userAgent;
     passwCount += 1;
     var remCount = 3 - passwCount;
-    const passw = req.body.password;
+    const passw = req.body.loginPassword;
     const promise1 = findHashPassw(name);
     const promise2 = 22;
     let usrObj = { 'username': name, 'remAttempt': remCount }; //JSON syntax
-    Promise.all([promise1, promise2])
+    var usrId, browser, os, cpu;
+    Promise.all([promise1, promise2]) //promise.all-1
         .then(() => {
             bcrypt.compare(passw, hashP, function (err, result) {
                 if (result == true) {
-                    res.render('validLogin.pug', {usrObj});
+                    const promise3 = findUsrId(name);//this function obtain usrId
+                    const promise4 = getUsrAgent(name)//
+                    Promise.all([promise3, promise4]) //promise.all-2
+                        .then(() => {
+                            usrData = { 'id': usrId, 'username': name };
+                            authTok = sess.sessLogin(usrData);//authTok life is 2 hours
+                            req.session.usrId = usrId;
+                            req.session.usrName = name;
+                            req.session.authToken = authTok;
+                            req.session.login = true;
+                            userAgent={'Browser': browser, 'OS': os, 'CPU': cpu};
+                            res.render('validLogin.pug', { authTok, usrData, userAgent })
+                        })
+                        .catch((error) => {
+                            console.error('promise.all-2 error: ', error);
+                        });
                 } else {
                     if (passwCount < 3) {
                         //console.log('remaing count: ', remCount, 'name: ', name);
@@ -494,11 +605,11 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
             
         })
         .catch ((error) => {
-            console.error('promise.all error: ', error);
+            console.error('promise.all-1 error: ', error);
         });
     async function findHashPassw(name) {
         try {
-            const query = UserDb.where({ userName: name });
+            const query = UserKeys.where({ userName: name });
             const user = await query.findOne();
             hashP = user.hashPassw;
             
@@ -506,7 +617,32 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
             console.log(err);
         }
     }
+    async function findUsrId(name) {
+        const query = Users.findOne({ userName: `${name}` });
+        const doc = await query.exec();
+        usrId = doc.id;
+        console.log('id: ', usrId);
         
+    }
+    async function getUsrAgent(name) { //to find user-agent info
+        try {
+            const query = UserWebs.findOne({ userName: name });
+            const doc = await query.exec();
+            if (doc) { //To check if name exists
+                browser = doc.browser;
+                os = doc.os;
+                cpu = doc.cpu;
+                console.log('browser: ', browser, ' os: ', os, ' cpu: ', cpu);
+                
+            } else {
+                console.log(`Cannot get user-agent of ${name}`);
+            }
+
+        } catch (err) {
+            console.log(err);
+        }
+
+    }
 });
 app.post('/webAccess', function (req, res) { //Called from validLogin.pug
     var url;
@@ -529,10 +665,7 @@ app.post('/webAccess', function (req, res) { //Called from validLogin.pug
     }
     
 })
-/*app.get('/data', function (req, res) {
-    //res.json(urlObj);
-    res.redirect(urlObj.url);
-}) */
+
 app.get('/delWebRec', function (req, res) {
     res.render('delWebRec.pug', {urlObj});
 })
@@ -540,12 +673,36 @@ app.get('/userNameGen', function (req, res) {
     res.render('unGen.pug');
 })
 app.post('/genWebPw', function (req, res) {
-    const webUserName = req.body.user;
+    const webUserName = req.body.webUserName;
     const length = req.body.length;
+    const newUrl = req.body.url;
+    const usrName = req.body.usrName;
+    console.log('usrName: ', usrName);
+    const authTok = req.body.token;
+    const message = 'Your authorization to proceed fails, please login again.';
+    var result = sess.sessTokenVrfy(authTok);
+    if (result.decoded) {
+        console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
+    } else if (result.error) {
+        if (result.error.name === 'TokenExpiredError') {
+            console.log('Token has expired');
+            //alert('Your authorization to proceed fails, please login again.');
+            res.render('err.pug', { message });
+        } else if (result.error.name === 'JsonWebTokenError') {
+            console.log('Token is invalid');
+            //alert('Your authorization to proceed fails, please relogin.');
+            res.render('err.pug', { message });
+        } else {
+            console.log('Token verification error:', result.error.message);
+            //alert('Your authorization to proceed fails, please relogin.');
+            res.rener('err.pug', {message});
+        }
+    }
     var lowCase = true;
     var upCase = true;
     var num = true;
     var spec = true;
+    var urlArr = [];
     if (req.body.lowCase === 'no') {
         lowCase = false;
     }
@@ -566,25 +723,44 @@ app.post('/genWebPw', function (req, res) {
         symbols: spec
 
     })
-    let obj = data.getDataObj();
-    if (urlObj.url === obj.url) { //urlObj is global variable and assigned value in /webAccess
-        data.setDataObj(obj.url, webUserName, password);
+    //To obtain userAgent - browser, os, cpu, etc
+    const userAgent = req.headers['user-agent'];
+    var browserUse, os, cpu, device, engine;
+    // Initialize the parser with the user agent string
+    if (userAgent) {
+        let parser = new uaParser();
+        parser.setUA(userAgent);
+        let parserResults = parser.getResult();
+        browserUse = parserResults.browser; // Correctly access the browser information
+        os = parserResults.os;
+        cpu = parserResults.cpu;
+        engine = parserResults.engine;
+        device = parserResults.device;
     } else {
-        data.setDataObj(urlObj.url, webUserName, password);//urlObj.url value is set in app.pot(/webAccess) 
+        console.log('User-Agent header is missing');
     }
-    let pwObj = data.getDataObj();
+    let pwObj = {url: newUrl, webUn: webUserName, webPw: password};
     updUsWebDb(pwObj);
-    console.log('url: ', pwObj.url, ', user name:', webUserName, ', password: ', password);
+    console.log('url: ', pwObj.url, ', webUserName:', webUserName, ', password: ', password);
     // Display the password and to store login credentials
     res.render('resultPassw.pug', { pwObj });
     //function to update UserWebs DB model
-    async function updUsWebDb(obj) {
+    async function updUsWebDb(obj) { //to modify to find usrName and add new url if found, else add new usrName and url
         try {
-            //UserDb define at line 40
-            const u0 = new UserWebs({ userName: usName, hashPassw: hashPw, derivedKey: dKey, encPrvKey: enPrvKy, publicKey: pubKey });
-            await u0.save();
-            console.log(`User: ${usName} and encrypted keys added to UserDb`);
-
+            const query = UserWebs.findOne({ userName: usrName });
+            const doc = await query.exec();
+            if (doc) { //To check if name exists
+                doc.webUrl.push(obj.url);
+                await doc.save();
+                console.log('New url: ', obj.url, ' added for user: ', usrName);
+            } else {
+                urlArr.push(obj.url);
+                //UserWebs define above
+                const u0 = new UserWebs({ userName: usrName, webUrl: urlArr, browser: browserUse.name, os: os.name, cpu: cpu.architecture, device: device.vendor, engine: engine.name });
+                await u0.save();
+                console.log(`User: ${usrName} and new url added to UserWebs DB`);
+            }
+        
         } catch (err) {
             console.log(err);
         }
@@ -622,15 +798,35 @@ app.post('/genWebUn', function (req, res) {
 
         })
     }
-    
-    let obj = data.getDataObj();
-    if (urlObj.url === obj.url) {
+    const newUrl = req.body.newUrl;
+    /*let obj = data.getDataObj();
+    if (urlObj.url === obj.url) { //urlObj is global variable and assigned value in /webAccess 
         data.setDataObj(obj.url, webUserName, obj.pwd);
     } else {
         data.setDataObj(urlObj.url, webUserName, obj.pwd);
+    }*/
+    const authTok = req.body.token;
+    var result = sess.sessTokenVrfy(authTok);
+    const message = 'Your authorization to proceed fails, please login again.';
+    if (result.decoded) {
+        console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
+    } else if (result.error) {
+        if (result.error.name === 'TokenExpiredError')
+        {
+            console.log('Token has expired');
+            //alert('Your authorization to proceed fails, please login again.');
+            res.render('err.pug', {message});
+        } else if (result.error.name === 'JsonWebTokenError') {
+            console.log('Token is invalid');
+            //alert('Your authorization to proceed fails, please relogin.');
+            res.render('err.pug', {message});
+        } else {
+            console.log('Token verification error:', result.error.message);
+            //alert('Your authorization to proceed fails, please relogin.');
+            res.rener('err.pug', {message});
+        }
     }
-    
-    let unObj = data.getDataObj();
+    let unObj = {url: newUrl, webUn: webUserName};
     //webLoginJSON = unObj.stringify();
     console.log('User Name: ', webUserName, 'url: ', unObj.url);
     res.render('pwGen.pug', { unObj });//Next go to generating password page
@@ -647,21 +843,48 @@ app.get('/validLogin', function (req, res) {
 })
 app.post('/getWebPwd', function (req, res) {
     var web = req.body.url;
+    const authTok = req.body.token;
+    var result = sess.sessTokenVrfy(authTok);
+    const message = 'Your authorization to proceed fails, please login again.';
+    if (result.decoded) {
+        console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
+    } else if (result.error) {
+        if (result.error.name === 'TokenExpiredError') {
+            console.log('Token has expired');
+            //alert('Your authorization to proceed fails, please login again.');
+            res.render('err.pug', {message});
+        } else if (result.error.name === 'JsonWebTokenError') {
+            console.log('Token is invalid');
+            //alert('Your authorization to proceed fails, please relogin.');
+            res.render('err.pug', {message});
+        } else {
+            console.log('Token verification error:', result.error.message);
+            //alert('Your authorization to proceed fails, please relogin.');
+            res.rener('err.pug', {message});
+        }
+    }
     let webObj = { url: web };
     res.render('getWebPwd.pug', { webObj });
 })
 app.get('/ffi', function (req, res) { //Called from scripts/capPhoto2.js
-    var name = uName.getUsername();
+    var usrData, authTok, usrId, userAgent, browser, os, cpu;
+    const queryParam = req.query;
+    var name = queryParam.usrName;
     var faceOk = false;
     console.log(`login name: ${name}`);
-    var voi=ref.types.void;
+    //var voi=ref.types.void;
     var int = ref.types.int;
     var bool = ref.types.bool;
     var string = ref.types.CString;
-    const dllPath = path.join(__dirname, 'x64', 'Debug', 'pwdNmLib.dll');//'C:\\Users\\k_pic\\source\\repo\\ExpressPwdNoMore\\x64\\Debug\\pwdNmLib.dll';
+    const dllPath = path.join(__dirname, 'x64', 'Release', 'pwdNmLib.dll');//'C:\\Users\\k_pic\\source\\repo\\1FirstPass\\x64\\Release\\pwdNmLib.dll';
     console.log(dllPath);
+    if (fs.existsSync(dllPath)) {
+        console.log('DLL path exists: ', dllPath);
+    } else {
+        console.log('DLL path does not exist: ', dllPath);
+    }
     // Define the types for your function return and argument types
-    var myFunction = ffin.Library(dllPath, { //'C:\Users\k_pic\source\repo\ExpressPwdNoMore\x64\Release\pwdNmLib.dll'
+    var myFunction = ffin.Library(dllPath, { //'C:\Users\k_pic\source\repo\1FirstPass\x64\Release\pwdNmLib.dll'
         "genPwd": [string, [int, bool, bool, bool]],
         "coutMessHdlr": [string,[]],
         "logFace": [bool, [string]]
@@ -687,14 +910,49 @@ app.get('/ffi', function (req, res) { //Called from scripts/capPhoto2.js
             count = 1;
             res.render('fail3Login.pug');
         } else {
-            res.render('rePhotoLog.pug', {remObj});
+            res.render('rePhotoLog.pug', { remObj, username: name});
         }
     } else {
         console.log(` faceOk: ${faceOk}.`, 'Face login is completed and successful.');
-        res.render('validLogin.pug');
-        
+        const promise3 = findUsrId(name);//this function obtain usrId
+        const promise4 = getUsrAgent(name)//
+        Promise.all([promise3, promise4]) //promise.all-2
+            .then(() => {
+                usrData = { 'id': usrId, 'username': name };
+                authTok = sess.sessLogin(usrData);//authTok life is 2 hours
+                req.session.usrId = usrId;
+                req.session.usrName = name;
+                req.session.authToken = authTok;
+                req.session.login = true;
+                userAgent = { 'Browser': browser, 'OS': os, 'CPU': cpu };
+                res.render('validLogin.pug', { authTok, usrData, userAgent })
+            })
     }
-    //res.render('sup.pug');
+    async function findUsrId(name) {
+            const query = Users.findOne({ userName: `${name}` });
+            const doc = await query.exec();
+            usrId = doc.id;
+            //console.log('id: ', usrId);
+    }
+    async function getUsrAgent(name) { //to find user-agent info
+            try {
+                const query = UserWebs.findOne({ userName: name });
+                const doc = await query.exec();
+                if (doc) { //To check if name exists
+                    browser = doc.browser;
+                    os = doc.os;
+                    cpu = doc.cpu;
+                    console.log('browser: ', browser, ' os: ', os, ' cpu: ', cpu);
+
+                } else {
+                    console.log(`Cannot get user-agent of ${name}`);
+                }
+
+            } catch (err) {
+                console.log(err);
+            }
+
+    }
 });
 app.get('/error', function (req, res) {
     console.log(req.body);
@@ -732,8 +990,8 @@ app.use(function (err, req, res, next) {
     });
 });
 
-app.set('port', process.env.PORT || 3000);
+/*app.set('port', process.env.PORT || 3000);
 
 var server = app.listen(app.get('port'), function () {
     debug('Express server listening on port ' + server.address().port);
-});
+});*/

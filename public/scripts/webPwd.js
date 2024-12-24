@@ -1,6 +1,6 @@
 //To retrieve the password of user's login to the web
 document.addEventListener('DOMContentLoaded', () => {
-    const pElement = document.querySelector('p[data-url');
+    const pElement = document.querySelector('p[data-url]');
     const url = pElement.getAttribute('data-url');
     console.log('url: ', url);
     let db;
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 var tableCell = document.createElement('td');
                 var tableCell2 = document.createElement('td');
                 tableCell.innerText = 'URL: ' + web + ' => Username: '+usrName+ ' =>  Password: ' + passw;
-                tableCell2.innerHTML='<br>'+'Please copy the password and paste to login the website.'
+                tableCell2.innerHTML='<br>'+'Please copy the username/password and paste to login the website.'
                 tableRow.appendChild(tableCell); // Append the table cell to the table row
                 tableRow2.appendChild(tableCell2);
                 tableEntry.appendChild(tableRow);
