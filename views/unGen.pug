@@ -20,11 +20,14 @@ html
     script(src='/scripts/getToken.js')
   body
     script.
-          var newUrl = localStorage.getItem('newUrl');
-          console.log('newUrl: ', newUrl);
-          document.addEventListener('DOMContentLoaded', function() {
-              document.getElementById('newUrl').value= newUrl;
+          document.addEventListener('DOMContentLoaded', function() {      
+              //var token = localStorage.getItem('authToken');          
+              var newUrl = localStorage.getItem('newUrl');
+              console.log('newUrl: ', newUrl);
+              document.getElementById('newUrl').value= newUrl || '';
+              //document.getElementById('authToken').value = token || '';
           });
+          
   .contentarea
   | User name form generation
   p#passwForm

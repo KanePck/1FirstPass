@@ -32,6 +32,7 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include=".gitignore" />
     <Content Include="app.js" />
     <Content Include="binding.gyp" />
     <Content Include="indexPN.js" />

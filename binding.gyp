@@ -10,5 +10,4 @@
         'libraries': [],
         'dependencies': [],
         'defines': []
-	}]
 }

@@ -21,8 +21,9 @@ function listenForClicks() {
 
         const clickButt = e.target.textContent;
         const choose = buttonToUrl(clickButt);
-        const fUrl = "https://localhost:1337/" + choose;
-        window.open(fUrl);
+        const currentOrigin = window.location.origin;
+        const fUrl = `${currentOrigin}/${choose}`;
+        window.location.href = fUrl;
         function buttonToUrl(popupButt) {
             var ret;
             switch (popupButt) {

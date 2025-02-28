@@ -27,7 +27,12 @@ colspan.nav {
     padding-left: 5px;
     padding-right: 50px;
 }
-
+p#storeButt {
+    color: orange;
+}
+p#mess {
+    color: red;
+}
 body {
     padding: 50px;
     font: 16px "Lucida Grande", Helvetica, Arial, sans-serif;
@@ -36,6 +41,12 @@ body {
     border-bottom: 1px solid blue;
     border-left: 1px solid blue;
     border-right: 1px solid blue;
+}
+p#del {
+    color: red;
+}
+p#bkup {
+    color: green;
 }
 form {
     width: 100%;

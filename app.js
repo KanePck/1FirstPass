@@ -583,6 +583,7 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
                         .then(() => {
                             usrData = { 'id': usrId, 'username': name };
                             authTok = sess.sessLogin(usrData);//authTok life is 2 hours
+                            console.log('logPasswHdlr Token: ', authTok);
                             req.session.usrId = usrId;
                             req.session.usrName = name;
                             req.session.authToken = authTok;
@@ -635,7 +636,10 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
                 console.log('browser: ', browser, ' os: ', os, ' cpu: ', cpu);
                 
             } else {
-                console.log(`Cannot get user-agent of ${name}`);
+                console.log(`New user so cannot get user-agent of ${name}`);
+                browser = 'None because you are new user.';
+                os = 'None.';
+                cpu = 'None.';
             }
 
         } catch (err) {
@@ -695,7 +699,7 @@ app.post('/genWebPw', function (req, res) {
         } else {
             console.log('Token verification error:', result.error.message);
             //alert('Your authorization to proceed fails, please relogin.');
-            res.rener('err.pug', {message});
+            res.render('err.pug', {message});
         }
     }
     var lowCase = true;
@@ -739,11 +743,12 @@ app.post('/genWebPw', function (req, res) {
     } else {
         console.log('User-Agent header is missing');
     }
-    let pwObj = {url: newUrl, webUn: webUserName, webPw: password};
+    let pwObj = { url: newUrl, webUn: webUserName, webPw: password };
+    let firstWeb = true;
     updUsWebDb(pwObj);
     console.log('url: ', pwObj.url, ', webUserName:', webUserName, ', password: ', password);
     // Display the password and to store login credentials
-    res.render('resultPassw.pug', { pwObj });
+    res.render('resultPassw.pug', { pwObj, firstWeb });
     //function to update UserWebs DB model
     async function updUsWebDb(obj) { //to modify to find usrName and add new url if found, else add new usrName and url
         try {
@@ -752,6 +757,7 @@ app.post('/genWebPw', function (req, res) {
             if (doc) { //To check if name exists
                 doc.webUrl.push(obj.url);
                 await doc.save();
+                firstWeb = false;
                 console.log('New url: ', obj.url, ' added for user: ', usrName);
             } else {
                 urlArr.push(obj.url);
@@ -764,7 +770,11 @@ app.post('/genWebPw', function (req, res) {
         } catch (err) {
             console.log(err);
         }
-
+        if (firstWeb) {
+            console.log('First web in genWebPw is True.');
+        } else {
+            console.log('First web in genWebPw is False.');
+        }
     }
  })
 app.post('/genWebUn', function (req, res) {
@@ -806,10 +816,15 @@ app.post('/genWebUn', function (req, res) {
         data.setDataObj(urlObj.url, webUserName, obj.pwd);
     }*/
     const authTok = req.body.token;
+    console.log('Token: ', authTok);
     var result = sess.sessTokenVrfy(authTok);
     const message = 'Your authorization to proceed fails, please login again.';
+    let unObj = { url: newUrl, webUn: webUserName };
     if (result.decoded) {
         console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
+        console.log('User Name: ', webUserName, ', url: ', unObj.url, ', authToken: ', authTok);
+        res.render('pwGen.pug', { unObj });//Next go to generating password page
+
     } else if (result.error) {
         if (result.error.name === 'TokenExpiredError')
         {
@@ -818,19 +833,15 @@ app.post('/genWebUn', function (req, res) {
             res.render('err.pug', {message});
         } else if (result.error.name === 'JsonWebTokenError') {
             console.log('Token is invalid');
-            //alert('Your authorization to proceed fails, please relogin.');
+            console.log('User Name: ', webUserName, ', url: ', unObj.url, ', authToken: ', authTok);
             res.render('err.pug', {message});
         } else {
             console.log('Token verification error:', result.error.message);
             //alert('Your authorization to proceed fails, please relogin.');
-            res.rener('err.pug', {message});
+            res.render('err.pug', {message});
         }
     }
-    let unObj = {url: newUrl, webUn: webUserName};
-    //webLoginJSON = unObj.stringify();
-    console.log('User Name: ', webUserName, 'url: ', unObj.url);
-    res.render('pwGen.pug', { unObj });//Next go to generating password page
-
+    
 })
 app.get('/oldUrl', function (req, res) {
     res.render('oldUrl.pug');

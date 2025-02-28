@@ -90,6 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     action.onsuccess = (evt) => {
                         const del = document.getElementById('del');
                         del.innerText = 'URL: ' + url + ' login record has been deleted.';
+                        exportData(db, dbStoreName);
+                        const bup = document.getElementById('bkup');
+                        bup.innerText = "Updated website credential data has been stored in local file name: backup.";
                     }
                     action.onerror = (evt) => {
                         const del = document.getElementById('del');
@@ -108,4 +111,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         })
     };
+    function exportData(db, dbStoreName) {
+        const transaction = db.transaction(dbStoreName, "readonly");
+        const objectStore = transaction.objectStore(dbStoreName);
+        const data = [];
+        objectStore.openCursor().onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (cursor) {
+                const recVal = cursor.value;
+                const recKey = cursor.key;
+                data.push({ key: recKey, value: recVal });
+                cursor.continue();
+            } else {
+                // Convert data to JSON and create a downloadable link
+                const jsonData = JSON.stringify(data);
+                const blob = new Blob([jsonData], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "backup.json";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        };
+
+    }
 })
