@@ -774,7 +774,7 @@ app.post('/genWebPw', function (req, res) {
             console.log('First web in genWebPw is True.');
         } else {
             console.log('First web in genWebPw is False.');
-        }
+    }
     }
  })
 app.post('/genWebUn', function (req, res) {
@@ -841,7 +841,11 @@ app.post('/genWebUn', function (req, res) {
             res.render('err.pug', {message});
         }
     }
-    
+    let unObj = {url: newUrl, webUn: webUserName};
+    //webLoginJSON = unObj.stringify();
+    console.log('User Name: ', webUserName, 'url: ', unObj.url);
+    res.render('pwGen.pug', { unObj });//Next go to generating password page
+
 })
 app.get('/oldUrl', function (req, res) {
     res.render('oldUrl.pug');

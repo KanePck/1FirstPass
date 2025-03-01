@@ -10,4 +10,5 @@
         'libraries': [],
         'dependencies': [],
         'defines': []
+	}]
 }

@@ -2,6 +2,7 @@
 function storePassword(pwJs) {
     // Change JSON to object
     const pwObj = JSON.parse(pwJs);
+    //alert('dataObj: ', pwObj.pwd);
     console.log('dataObj: ', pwObj.pwd);
     const pElement = document.querySelector('p[data1]');
     const firstWeb = pElement.getAttribute('data1');
@@ -40,7 +41,7 @@ function storePassword(pwJs) {
             const message = document.getElementById('mess');
             message.innerText = "Please select file from pop-up of your computer for importing web credential records to your browser database, due to loss of browser database.";
             triggerImport(db, dbStoreName);
-        }
+    }
         addData(db, pwObj, dbStoreName);
         exportData(db, dbStoreName);
         const bup = document.getElementById('bkup');
@@ -99,7 +100,7 @@ function storePassword(pwJs) {
                     const action = storeUpg.put(value);//put() will update and insert, add() only insert
                     action.onsuccess = function () {
                         console.log("Import data to indexedDB/objectStore");
-                    };
+    };
                     action.onerror = function () {
                         console.log("Error, import data to indexedDB failed.", event);
                     };
@@ -113,7 +114,7 @@ function storePassword(pwJs) {
             };
             reader.readAsText(file);//Read the file as text
         }
-        
+    
     }
     function addData(db, pwObj, dbStoreName) {
         // Start a new transaction
@@ -191,7 +192,7 @@ function storePassword(pwJs) {
         dbUpg = event.target.result;
         console.log('Open db version no: ', versionNo, ' done.');
         //createStore(requestUpg, dbUpg);
-        
+                
     }
     requestUpg.onerror = (event) => {
         console.error("Database error:", event.target.error);
@@ -217,7 +218,7 @@ function storePassword(pwJs) {
     triggerImport(dbUpg, dbStoreName);
     addData(dbUpg, pwObj, dbStoreName);
     exportData(dbUpg, dbStoreName);
-
+        
 } else {
     console.log("Object store exists");
     addData(db, pwObj, dbStoreName);
@@ -241,7 +242,7 @@ function storePassword(pwJs) {
             objStore.transaction.onerror = (evt) => {
                 console.error("request.onupgradeneeded error: ", evt.target.error);
             };
-        }
+}
     }*/
 
 
