@@ -677,16 +677,51 @@ app.get('/userNameGen', function (req, res) {
     res.render('unGen.pug');
 })
 app.post('/genWebPw', function (req, res) {
+    console.log('reqBody: ', req.body, 'reqSelf: ', req.body.self);
     const webUserName = req.body.webUserName;
     const length = req.body.length;
     const newUrl = req.body.url;
     const usrName = req.body.usrName;
     console.log('usrName: ', usrName);
+    var lowCase = true;
+    var upCase = true;
+    var num = true;
+    var spec = true;
+    var urlArr = [];
+    var password = '';
+    if (req.body.self) {
+        password = req.body.self;
+    } else {
+        if (req.body.lowCase === 'no') {
+            lowCase = false;
+        }
+        if (req.body.upCase === 'no') {
+            upCase = false;
+        }
+        if (req.body.numChar === 'no') {
+            num = false;
+        }
+        if (req.body.specChar === 'no') {
+            spec = false;
+        }
+        password = generator.generate({
+            length: length,
+            lowercase: lowCase,
+            uppercase: upCase,
+            numbers: num,
+            symbols: spec
+
+        })
+    }
+    let pwObj = { url: newUrl, webUn: webUserName, webPw: password };
     const authTok = req.body.token;
     const message = 'Your authorization to proceed fails, please login again.';
     var result = sess.sessTokenVrfy(authTok);
     if (result.decoded) {
         console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
+        console.log('url: ', pwObj.url, ', webUserName:', webUserName, ', password: ', password);
+        // Display the password and to store login credentials
+        res.render('resultPassw.pug', { pwObj });
     } else if (result.error) {
         if (result.error.name === 'TokenExpiredError') {
             console.log('Token has expired');
@@ -702,31 +737,7 @@ app.post('/genWebPw', function (req, res) {
             res.render('err.pug', {message});
         }
     }
-    var lowCase = true;
-    var upCase = true;
-    var num = true;
-    var spec = true;
-    var urlArr = [];
-    if (req.body.lowCase === 'no') {
-        lowCase = false;
-    }
-    if (req.body.upCase === 'no') {
-        upCase = false;
-    }
-    if (req.body.numChar === 'no') {
-        num = false;
-    }
-    if (req.body.specChar === 'no') {
-        spec = false;
-    }
-    var password = generator.generate({
-        length: length,
-        lowercase: lowCase,
-        uppercase: upCase,
-        numbers: num,
-        symbols: spec
-
-    })
+    /*
     //To obtain userAgent - browser, os, cpu, etc
     const userAgent = req.headers['user-agent'];
     var browserUse, os, cpu, device, engine;
@@ -743,39 +754,50 @@ app.post('/genWebPw', function (req, res) {
     } else {
         console.log('User-Agent header is missing');
     }
-    let pwObj = { url: newUrl, webUn: webUserName, webPw: password };
-    let firstWeb = true;
-    updUsWebDb(pwObj);
-    console.log('url: ', pwObj.url, ', webUserName:', webUserName, ', password: ', password);
-    // Display the password and to store login credentials
-    res.render('resultPassw.pug', { pwObj, firstWeb });
+    
+    //let firstWeb = 'yes';
+    //updUsWebDb(pwObj); //not used because asynch function not in time with res.render()
+    /*const promise1 = updUsWebDb(pwObj);
+    const promise2 = 22;
+    Promise.all([promise1, promise2])
+        .then(() => {
+            console.log('url: ', pwObj.url, ', webUserName:', webUserName, ', password: ', password);
+            // Display the password and to store login credentials
+            res.render('resultPassw.pug', { pwObj, firstWeb });
+        });
+        .catch ((error) => {
+            console.error('promise.all-1 error: ', error);
+            res.render('resultPassw.pug', { pwObj, firstWeb });
+        });*/
     //function to update UserWebs DB model
-    async function updUsWebDb(obj) { //to modify to find usrName and add new url if found, else add new usrName and url
+    /*async function updUsWebDb(obj) { //to modify to find usrName and add new url if found, else add new usrName and url
         try {
             const query = UserWebs.findOne({ userName: usrName });
             const doc = await query.exec();
             if (doc) { //To check if name exists
                 doc.webUrl.push(obj.url);
                 await doc.save();
-                firstWeb = false;
                 console.log('New url: ', obj.url, ' added for user: ', usrName);
+                firstWeb = 'no';
             } else {
                 urlArr.push(obj.url);
                 //UserWebs define above
                 const u0 = new UserWebs({ userName: usrName, webUrl: urlArr, browser: browserUse.name, os: os.name, cpu: cpu.architecture, device: device.vendor, engine: engine.name });
                 await u0.save();
                 console.log(`User: ${usrName} and new url added to UserWebs DB`);
+                //return 'yes';
             }
         
         } catch (err) {
             console.log(err);
+            //return 'yes';
         }
-        if (firstWeb) {
+        if (firstWeb==='yes') {
             console.log('First web in genWebPw is True.');
         } else {
             console.log('First web in genWebPw is False.');
     }
-    }
+    }*/
  })
 app.post('/genWebUn', function (req, res) {
     var webUserName = '';
@@ -841,10 +863,10 @@ app.post('/genWebUn', function (req, res) {
             res.render('err.pug', {message});
         }
     }
-    let unObj = {url: newUrl, webUn: webUserName};
+    //let unObj = {url: newUrl, webUn: webUserName};
     //webLoginJSON = unObj.stringify();
-    console.log('User Name: ', webUserName, 'url: ', unObj.url);
-    res.render('pwGen.pug', { unObj });//Next go to generating password page
+    //console.log('User Name: ', webUserName, 'url: ', unObj.url);
+    //res.render('pwGen.pug', { unObj });//Next go to generating password page
 
 })
 app.get('/oldUrl', function (req, res) {

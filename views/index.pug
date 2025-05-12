@@ -35,13 +35,15 @@ html
 			ul
 				li.list We help you to automate the registration and login to any web page without having to remember thoses passwords.
 				li.list Now you only are required to remember one master password or have your face photographed as authorization and access to our web site and we do the rest for you.
+				li.list We do not store any of your secured passwords or credentials on our server.
+				li.list The secured passwords are stored in your web browsers and on your local computer file system as a backup.
 		br
 		p#user Login or Register
 			form(action='/login', method='post') Existing User, please login.
 				br
 				br
 				label(for='uname')
-				input#uname(type='text' autofocus, name='username' required, value='Your name ')
+				input#uname(type='text' autofocus, name='username' placeholder='Your name' required)
 				br
 				br
 				p If you signed up with self photo login option, please check box if require this option.

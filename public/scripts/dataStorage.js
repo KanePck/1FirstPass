@@ -2,15 +2,16 @@
 function storePassword(pwJs) {
     // Change JSON to object
     const pwObj = JSON.parse(pwJs);
-    //alert('dataObj: ', pwObj.pwd);
+    //let firstWeb = false;
     console.log('dataObj: ', pwObj.pwd);
-    const pElement = document.querySelector('p[data1]');
-    const firstWeb = pElement.getAttribute('data1');
-    if (firstWeb) {
+    /*const pElement = document.querySelector('p[data1]');
+    const fweb = pElement.getAttribute('data1');
+    if (fweb === 'yes') {
+        firstWeb = true;
         console.log('firstWeb in dataStorage is True.');
     } else {
         console.log('firstWeb in dataStorage is False.');
-    }
+    }*/
     let db, dbUpg;
     let dbName = 'webPwdDB';
     let dbStoreName = 'webDbStore1';
@@ -32,16 +33,19 @@ function storePassword(pwJs) {
     request.onerror = (event) => {
         console.error("Database error:", event.target.error);
     };
+    request.onblocked = () => {
+        console.error("Database connection is blocked. Close other tabs or processes using the database.");
+    };
     request.onsuccess = (event) => {
         db = event.target.result;
         versionNo = db.version;
         console.log('Open db version no: ', versionNo, ' done.');
         //Check if indexed db not exist(dbLoss=true, in request.onupgradeneeded) and this is returning user that has web access credentials before.
-        if (!firstWeb && dbLoss) {
+        if (dbLoss) {
             const message = document.getElementById('mess');
             message.innerText = "Please select file from pop-up of your computer for importing web credential records to your browser database, due to loss of browser database.";
             triggerImport(db, dbStoreName);
-    }
+        }
         addData(db, pwObj, dbStoreName);
         exportData(db, dbStoreName);
         const bup = document.getElementById('bkup');
@@ -67,7 +71,7 @@ function storePassword(pwJs) {
         dbLoss = true;//indicate indexed db not exist
         //addData(db, pwObj, dbStoreName);
         //exportData(db, dbStoreName);
-    }
+    };
     function triggerImport(dbUpg, dbStoreName) {
         // Create and insert a file input element dynamically
         const fileInput = document.createElement("input");
@@ -100,7 +104,7 @@ function storePassword(pwJs) {
                     const action = storeUpg.put(value);//put() will update and insert, add() only insert
                     action.onsuccess = function () {
                         console.log("Import data to indexedDB/objectStore");
-    };
+                    };
                     action.onerror = function () {
                         console.log("Error, import data to indexedDB failed.", event);
                     };

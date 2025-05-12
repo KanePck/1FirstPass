@@ -24,7 +24,7 @@ html
   p User Name: #{pwObj.webUn} 
   p Password: #{pwObj.webPw}
     
-  p(data1=firstWeb) Please press STORE DATA button to store the url and username/password to this browser storage database
+  p Please press STORE DATA button to store the url and username/password to this browser storage database
   button#store
    |STORE DATA
   script.
@@ -48,7 +48,10 @@ html
   button#newWin
    | #{pwObj.url}
   script.
-    const newUrl='#{pwObj.url}';
+    var newUrl='#{pwObj.url}';
+    if (!newUrl.startsWith('http')) {
+       newUrl = 'https://' + newUrl; // Default to HTTPS if no protocol is present
+    }
     document.getElementById('newWin').addEventListener('click', function() {
       window.open(newUrl);
     });

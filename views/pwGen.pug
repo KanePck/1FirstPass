@@ -35,7 +35,15 @@ html
    li
      select(name='webUserName')
        option(selected='selected', value=`${unObj.webUn}`) #{unObj.webUn}
-       
+   li
+     lable(for='self') Self provided password:
+     input#self(type='text', name='self')
+     br
+     br
+     button#self(type='submit') Submit
+     br
+     p For auto-creation of password, please fill in below.
+     br       
    li
      label(for='length') Length of password:
      input#length(type='number', name='length')

@@ -27,7 +27,10 @@ html
   button#newWin
    | New Window: #{webObj.url}
   script.
-    const newUrl='#{webObj.url}';
+    var newUrl='#{webObj.url}';
+    if (!newUrl.startsWith('http')) {
+       newUrl = 'https://' + newUrl; // Default to HTTPS if no protocol is present
+    }
     document.getElementById('newWin').addEventListener('click', function() {
       window.open(newUrl);
     });
