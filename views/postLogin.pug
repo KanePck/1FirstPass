@@ -14,41 +14,63 @@ html
                 a(href='/contactUs') Contact us
     head
         title postLogin 
-        link(rel='stylesheet', href='/stylesheets/main.css')       
+        link(rel='stylesheet', href='/stylesheets/main.css') 
+        script(src='/scripts/uploadFile.js')
     body
         h1 Your login has been completed and valid.
-        p Do you want to log in to old website, or sign up to new website, or delete record of a website: 
+        p Do you want to obtain credentials to log in to old website/app or sign up to new website, and/or delete credential record of a website: 
         form(action='/webAccess', method='post', onsubmit="return validateUrl()") Please select: 
             br
             br
             input(checked='checked', name='oldNew', type='radio', value='new')
             | New website 
-            label(for='url') Please enter http(s)://URL or just URL (www.example.com)
-            input#nurl(type='text', name='newUrl' placeholder="http(s)://www.example.com" pattern="^(https?:\/\/)?www\.[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$" size="30")
+            label(for='url') Please enter http(s)://URL or just URL (www.example.com, www.example.co.th, www.example.net, etc)
+            input#nurl(type='text', name='newUrl' placeholder="http(s)://www.example.com" pattern="^(https?:\/\/)?(www\.)?[a-zA-Z0-9.-]+\.(go|co|[a-zA-Z]{2,6})(\.[a-zA-Z]{2,6})?$" size="30")
             br
             br
             input#ourl(name='oldNew', type='radio', value='old')
-            | Old website. 
+            | Old website/app. 
             br
             br
             button(type='submit') Submit
-            script.
-                function validateUrl() {
-                   const urlInput = document.getElementById('nurl').value.trim();
-                   const oldNewSelection = document.querySelector('input[name="oldNew"]:checked').value;
-                   // Skip validation if "Old website" is selected
-                   if (oldNewSelection === "old") {
-                      return true; // Allow form submission
-                   }
-                   // Validate the URL format
-                   const pattern = /^(https?:\/\/)?www\.[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-                   if (!pattern.test(urlInput)) {
-                      alert("Invalid URL format! Please enter 'www.example.com' or 'http(s)://www.example.com'.");
-                      return false; // Stop form submission
-                   }
-                   return true; // Allow form submission if validation passes
-                }
+        p Do you want to generate username and password for signing up to new app, and/or delete credential record of an app:
+        form(action='/appAccess', method='post') Please input: 
+            br
+            br
+            input(checked='checked', name='oldNew', type='radio', value='new')
+            | New app. 
+            label(for='app') Please enter any app name.
+            input#napp(type='text', name='newApp' placeholder="app name")
+            br
+            br
+            button(type='submit') Submit
+        p Do you want to upload all credentials from a backup file to this browser storage database, then please press UPLOAD DATA button. 
+        button#upload
+          |UPLOAD DATA
+        script(nonce=nonce).
+          document.getElementById('upload').addEventListener('click', function () {
+             uploadFile();		  
+          });
+        script(nonce=nonce).
+            function validateUrl() {
+               const urlInput = document.getElementById('nurl').value.trim();
+               const oldNewSelection = document.querySelector('input[name="oldNew"]:checked').value;
+               // Skip validation if "Old website" is selected
+               if (oldNewSelection === "old") {
+                  return true; // Allow form submission
+               }
+               // Validate the URL format
+               const pattern = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+               if (!pattern.test(urlInput)) {
+                  alert("Invalid URL format! Please enter 'www.example.com' or 'http(s)://www.example.com'.");
+                  return false; // Stop form submission
+               }
+               return true; // Allow form submission if validation passes
+            }
     br
+    p#mess
+    br
+    p#target
     br
     footer
         p The entirety of this site is protected by copyright @2024 1FirstPass company limited

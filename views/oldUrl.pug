@@ -10,7 +10,7 @@ html
           colspan.nav
               a(href='/') Home
           colspan.nav
-              a(href='/postLogin') Select Old/New URL
+              a(href='/postLogin') Select Old/New URL/APP
           colspan.nav
               a(href='/aboutUs') About us   
           colspan.nav
@@ -21,7 +21,7 @@ html
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
     script(src='/scripts/oldWeb.js')
   body
-    p Please click to show list of your active websites
+    h1(data-apple=appleObj.isApple) Please click to show list of your active websites
     button#btn(type='submit') Click
     .container
     p#none

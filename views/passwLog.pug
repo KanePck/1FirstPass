@@ -17,7 +17,7 @@ head
 Title User to provide a login password
 link(rel='stylesheet', href='/stylesheets/main.css')
 body
-  script.
+  script(nonce=nonce).
         var sid=localStorage.getItem('sessionId');
         console.log('sid: ', sid);
         document.addEventListener('DOMContentLoaded', function() {

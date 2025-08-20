@@ -20,19 +20,19 @@ html
     script(src='/scripts/dataStorage.js')
 	
   body
-  p For Url: #{pwObj.url}
-  p User Name: #{pwObj.webUn} 
-  p Password: #{pwObj.webPw}
+  p For App: #{pwObj.appt}
+  p User Name: #{pwObj.apptUn} 
+  p Password: #{pwObj.apptPw}
     
-  p Please press STORE DATA button to store the url and username/password to this browser storage database
+  p Please press STORE DATA button to store the app and username/password to this browser storage database
   button#store
    |STORE DATA
   script(nonce=nonce).
     // Assuming pwObj is available in this script
     const pwObj = {
-    pwd: '#{pwObj.webPw}',
-    name: '#{pwObj.webUn}',
-    url: '#{pwObj.url}'
+    pwd: '#{pwObj.apptPw}',
+    name: '#{pwObj.apptUn}',
+    url: '#{pwObj.appt}'
     };
     const js=JSON.stringify(pwObj);
     document.getElementById('store').addEventListener('click', function() {
@@ -44,17 +44,6 @@ html
   br
   p#bkup
   br
-  p#target If you want to browse to new URL page, please press new Window button to open new url page.
-  button#newWin
-   | #{pwObj.url}
-  script(nonce=nonce).
-    var newUrl='#{pwObj.url}';
-    if (!newUrl.startsWith('http')) {
-       newUrl = 'https://' + newUrl; // Default to HTTPS if no protocol is present
-    }
-    document.getElementById('newWin').addEventListener('click', function() {
-      window.open(newUrl);
-    });
   br
   br
   footer

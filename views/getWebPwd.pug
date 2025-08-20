@@ -9,7 +9,7 @@ html
           colspan.nav
               a(href='/') Home
           colspan.nav
-              a(href='/postLogin') Select Old/New URL
+              a(href='/postLogin') Select Old/New URL/APP
           colspan.nav
               a(href='/aboutUs') About us   
           colspan.nav
@@ -20,19 +20,32 @@ html
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
     script(src='/scripts/webPwd.js')
   body
-  p(data-url=webObj.url) The website that you requested: #{webObj.url}
+  p(data-url=webObj.url) The website/app that you requested: #{webObj.url}
   table
     tbody
-  p If you want to browse to new URL page, please press new URL button to open new url page.
+  p If you want to browse to new URL page to fill web credentials, please press new URL button to open new url page (not applicable for app).
   button#newWin
    | New Window: #{webObj.url}
-  script.
+  p If the above url is not totally correct, you can input its login url page here.-->
+  label(for='loginLink') Enter login page URL to fill username and password:
+  input#loginLink(name='link' type='url' placeholder='https://example.com/login')
+  button#openBtn
+   | New Window
+  script(nonce=nonce).
     var newUrl='#{webObj.url}';
     if (!newUrl.startsWith('http')) {
        newUrl = 'https://' + newUrl; // Default to HTTPS if no protocol is present
     }
     document.getElementById('newWin').addEventListener('click', function() {
       window.open(newUrl);
+    });
+    document.getElementById('openBtn').addEventListener('click', function () {
+      const linkInput = document.querySelector('input[name="link"]');
+      let url = linkInput.value.trim();
+      if (!url.startsWith('http')) {
+        url = 'https://' + url;
+      }
+      window.open(url, '_blank');
     });
   br
   br

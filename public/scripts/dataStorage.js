@@ -12,7 +12,7 @@ function storePassword(pwJs) {
     } else {
         console.log('firstWeb in dataStorage is False.');
     }*/
-    let db, dbUpg;
+    let db;
     let dbName = 'webPwdDB';
     let dbStoreName = 'webDbStore1';
     let versionNo;
@@ -45,11 +45,12 @@ function storePassword(pwJs) {
             const message = document.getElementById('mess');
             message.innerText = "Please select file from pop-up of your computer for importing web credential records to your browser database, due to loss of browser database.";
             triggerImport(db, dbStoreName);
+        } else {
+            addData(db, pwObj, dbStoreName);
+            exportData(db, dbStoreName);
+            const bup = document.getElementById('bkup');
+            bup.innerText = "Updated website/app credential data has been stored in local file name: backup.";
         }
-        addData(db, pwObj, dbStoreName);
-        exportData(db, dbStoreName);
-        const bup = document.getElementById('bkup');
-        bup.innerText = "Updated website credential data has been stored in local file name: backup.";
     };
     request.onupgradeneeded = (evt) => {
         db = evt.target.result;
@@ -94,6 +95,7 @@ function storePassword(pwJs) {
         });
         function importData(file, dbStoreName) {
             const reader = new FileReader();
+            let success = true;
             reader.onload = (event) => {
                 const jsonData = event.target.result;
                 const data = JSON.parse(jsonData);//data is obj type variable
@@ -106,6 +108,7 @@ function storePassword(pwJs) {
                         console.log("Import data to indexedDB/objectStore");
                     };
                     action.onerror = function () {
+                        success = false;
                         console.log("Error, import data to indexedDB failed.", event);
                     };
                 })
@@ -114,11 +117,16 @@ function storePassword(pwJs) {
                 }
                 trans.onerror = function (event) {
                     console.log("Transaction failed: ", event);
-                }       
+                }
+                if (success) {
+                    target.innerText = "Credential data from the backup file have been uploaded to browser database.";
+                } else {
+                    target.innerText = "Upload from backup file failed.";
+                }
             };
             reader.readAsText(file);//Read the file as text
         }
-    
+        
     }
     function addData(db, pwObj, dbStoreName) {
         // Start a new transaction
@@ -141,7 +149,7 @@ function storePassword(pwJs) {
                 act.onsuccess = function () {
                     console.log('Add data done.');
                     const dataStored = document.getElementById("storeButt");
-                    dataStored.innerText = "Username, Web URL, and its password have been kept in local storage. Please copy the password and paste on to sign up form of the website. Also data will be backed up and copied on to your local file folder.";
+                    dataStored.innerText = "Username, Web/App, and its password have been kept in local storage. Please copy the password and paste on to sign up form of the website/app. Also data will be backed up and copied on to your local file folder.";
                 };
                 act.onerror = function () {
                     console.log('Adding data error: ', this.error);

@@ -22,16 +22,16 @@ html
     script(nonce=nonce).
           document.addEventListener('DOMContentLoaded', function() {      
               //var token = localStorage.getItem('authToken');          
-          var newUrl = localStorage.getItem('newUrl');
-          console.log('newUrl: ', newUrl);
-              document.getElementById('newUrl').value= newUrl || '';
+          var newAppt = localStorage.getItem('newAppt');
+          console.log('newAppt: ', newAppt);
+              document.getElementById('newAppt').value= newAppt || '';
               //document.getElementById('authToken').value = token || '';
           });
           
   .contentarea
   | User name form generation
   p#passwForm
-  form(action='/genWebUn', id='formUserN', method='post') Please enter self user name or format for auto-creation of user name.
+  form(action='/genApptUn', id='formUserN', method='post') Please enter self user name or format for auto-creation of user name.
    br
    br
    li
@@ -82,7 +82,7 @@ html
      br
      button#auto(type='submit') Submit
      br
-     input#newUrl(type='hidden', name='newUrl')
+     input#newAppt(type='hidden', name='newAppt')
      input#authToken(type='hidden', name='token')
   br
   br

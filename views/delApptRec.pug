@@ -15,12 +15,12 @@ html
           colspan.nav
               a(href='/contactUs') Contact us
   head
-    title To delete previous record of web login credentials 
+    title To delete previous record of login credentials of an app
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
     script(src='/scripts/readWebRec.js')
   body
-    p The web that your login user-name and password to be deleted: #{urlObj.url}
-    p(data-url=urlObj.url) List of user name and password of this website
+    p The app that your login user-name and password to be deleted: #{apptObj.appt}
+    p(data-url=apptObj.appt) List of user name and password of this app
     p#none
     table
       tbody

@@ -10,7 +10,7 @@ const jwtSecretKey = process.env.jwtSecretKey || crypto.randomBytes(64).toString
 
 function sessLogin(userObj) {
     //const userJSON = JSON.stringify(userObj);
-    const token = jwt.sign(userObj, jwtSecretKey, { expiresIn: '2h' });
+    const token = jwt.sign(userObj, jwtSecretKey, { expiresIn: '12h' });
     return token;
 }
 function sessTokenVrfy(token) {

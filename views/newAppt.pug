@@ -1,4 +1,4 @@
-//Called from webAccess.js
+//Called from appAccess.js
 doctype html
 html
   nav.navbar.navbar-inverse
@@ -19,19 +19,19 @@ html
   head
     title Your new websites (Called from /webAccess)
     link(rel='stylesheet', href='/stylesheets/newUrl.css')
-    script(src='/scripts/newWeb.js')
+    script(src='/scripts/newApp.js')
 	
   body
-    h1(data-newUrl=urlObj.url) The new website that needs new username and password: #{urlObj.url}
+    h1(data-newAppt=apptObj.appt) The new app that needs new username and password: #{apptObj.appt}
     p Select User Name, which after completed, will continue with password generation
     div#popupButt
         button User Name
-        p Select Delete, in case wanting to delete previous web login record of : #{urlObj.url}
+        p Select Delete, in case wanting to delete previous app login record of : #{apptObj.appt}
         button Delete
         
     div#error-content 
       class.hidden
-    script(src="/scripts/newWeb.js")
+    script(src="/scripts/newAppt.js")
     br
     br
     footer

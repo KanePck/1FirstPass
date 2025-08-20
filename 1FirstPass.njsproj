@@ -66,6 +66,9 @@
     <Content Include="public\scripts\getToken.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="public\scripts\newApp.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="public\scripts\newWeb.js">
       <SubType>Code</SubType>
     </Content>
@@ -81,6 +84,9 @@
     <Content Include="public\scripts\sessLocStore.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="public\scripts\uploadFile.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="public\scripts\webPwd.js">
       <SubType>Code</SubType>
     </Content>
@@ -91,6 +97,9 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="public\stylesheets\photoCap.css">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="routes\appAccess.js">
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\cleanTest.js">
@@ -104,6 +113,9 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\dbModels\UserWebs.js">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="routes\delApptRec.js">
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\delWebRec.js">
@@ -141,6 +153,9 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\mpassHdlr.js">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="routes\newAppt.js">
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\newUrl.js">
@@ -183,6 +198,9 @@
     <Content Include="routes\uName.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="routes\unGenAppt.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="routes\userNameGen.js">
       <SubType>Code</SubType>
     </Content>
@@ -196,6 +214,9 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\contactUs.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\delApptRec.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\delWebRec.pug">
@@ -220,6 +241,9 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\mpassErr.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\newAppt.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\newUrl.pug">
@@ -249,6 +273,9 @@
     <Content Include="views\pwGen.pug">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="views\pwGenAppt.pug">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="views\rePasswLog.pug">
       <SubType>Code</SubType>
     </Content>
@@ -256,6 +283,9 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\resultPassw.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\resultPwAppt.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\sup.pug">
@@ -268,6 +298,9 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\unGen.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\unGenAppt.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\validLogin.pug">

@@ -11,40 +11,41 @@ html
           colspan.nav
               a(href='/postLogin') Select Old/New URL/APP
           colspan.nav
-                a(href='/aboutUs') About us   
+              a(href='/aboutUs') About us   
           colspan.nav
-                a(href='/contactUs') Contact us
+              a(href='/contactUs') Contact us
   head
     title
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
     script(src='/scripts/getToken.js')
   body
     script(nonce=nonce).
-          document.addEventListener('DOMContentLoaded', function() {      
-              //var token = localStorage.getItem('authToken');          
-          var newUrl = localStorage.getItem('newUrl');
-          console.log('newUrl: ', newUrl);
-              document.getElementById('newUrl').value= newUrl || '';
-              //document.getElementById('authToken').value = token || '';
+          var usrName = localStorage.getItem('usrName');
+          console.log('usrName: ', usrName);
+          document.addEventListener('DOMContentLoaded', function() {
+              document.getElementById('uName').value= usrName;
           });
-          
-  .contentarea
-  | User name form generation
+  | Password form generation
+  p App User name: #{unObj.apptUn}
+  p For App: #{unObj.appt}
   p#passwForm
-  form(action='/genWebUn', id='formUserN', method='post') Please enter self user name or format for auto-creation of user name.
+  form(action='/genApptPw', id='formPassw', method='post') Please specify format of required password.
    br
    br
    li
-     lable(for='self') Self provided name:
+     select(name='apptUserName')
+       option(selected='selected', value=`${unObj.apptUn}`) #{unObj.apptUn}
+   li
+     lable(for='self') Self provided password:
      input#self(type='text', name='self')
      br
      br
      button#self(type='submit') Submit
      br
-     p For auto-creation of user name, please fill in below.
-     br
+     p For auto-creation of password, please fill in below.
+     br       
    li
-     label(for='length') Length of user name:
+     label(for='length') Length of password:
      input#length(type='number', name='length')
      br
      br
@@ -80,9 +81,10 @@ html
      |No
      br
      br
-     button#auto(type='submit') Submit
+     button(type='submit') Submit
      br
-     input#newUrl(type='hidden', name='newUrl')
+     input(type='hidden', name='appt', value=`${unObj.appt}`)
+     input#uName(type='hidden', name='usrName')
      input#authToken(type='hidden', name='token')
   br
   br

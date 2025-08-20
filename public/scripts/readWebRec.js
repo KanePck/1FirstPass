@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableCell3.innerHTML = '<br>' + 'Please click the button to delete login credentials data record.'
                 tableCell2.appendChild(button);
                 tableCell4.appendChild(script);*/
-                tableCell.innerText = 'URL: ' + web + ' => User-name: ' + usrName + ' =>  Password: ' + passw;
+                tableCell.innerText = 'URL/APP: ' + web + ' => User-name: ' + usrName + ' =>  Password: ' + passw;
                 tableRow.appendChild(tableCell); // Append the table cell to the table row
                 /*tableRow2.appendChild(tableCell2);
                 tableRow3.appendChild(tableCell3);
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableEntry.appendChild(tableRow4);*/
             } else {
                 if (n == 0) {
-                    none.innerHTML = 'No matching url/web found.';
+                    none.innerHTML = 'No matching url/app found.';
                 } else {
                     console.log('No more entries.');
                 }
@@ -89,25 +89,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     let action = objectStore.delete(dataObj.id);
                     action.onsuccess = (evt) => {
                         const del = document.getElementById('del');
-                        del.innerText = 'URL: ' + url + ' login record has been deleted.';
+                        del.innerText = 'URL/APP: ' + url + ' login record has been deleted.';
                         exportData(db, dbStoreName);
                         const bup = document.getElementById('bkup');
-                        bup.innerText = "Updated website credential data has been stored in local file name: backup.";
+                        bup.innerText = "Updated web/app credential data has been stored in local file name: backup.";
                     }
                     action.onerror = (evt) => {
                         const del = document.getElementById('del');
-                        del.innerText = 'Error deleting login record of => URL: ' + url + '. Login record has not been deleted.';
+                        del.innerText = 'Error deleting login record of => URL/APP: ' + url + '. Login record has not been deleted.';
                     }
                 } else {
                     const del = document.getElementById('del');
-                    del.innerText = 'Error deleting login record of => URL: ' + url + '. Login record may not exist.';
+                    del.innerText = 'Error deleting login record of => URL/APP: ' + url + '. Login record may not exist.';
                 }
 
 
             }
             req.onerror = () => {
                 const del = document.getElementById('del');
-                del.innerText = 'Error deleting login record of => URL: ' + url + '. Login record may not exist.';
+                del.innerText = 'Error deleting login record of => URL/APP: ' + url + '. Login record may not exist.';
             }
         })
     };

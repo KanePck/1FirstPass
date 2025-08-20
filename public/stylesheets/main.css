@@ -34,7 +34,7 @@ h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12
 body {
     padding: 50px;
     font: 16px "Lucida Grande", Helvetica, Arial, sans-serif;
-    width: 800px;
+    width: 900px;
     border-top: 1px solid blue;
     border-bottom: 1px solid blue;
     border-left:1px solid blue;
@@ -49,13 +49,17 @@ p.box {
     font: bold;
     color: darkblue;
 }
+p.mess, p.target {
+    font: bold;
+    color: red;
+}
 ul {
     padding-top: 15px;
     padding-left: 15px;
     width: 100%;
     background-color: beige;
-    color: cornflowerblue;
-    height: 110px;
+    color: blueviolet;
+    height: 330px;
     border-block: 1px solid blue;
     border-left: 1px solid blue;
     border-right: 1px solid blue;

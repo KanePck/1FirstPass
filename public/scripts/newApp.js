@@ -1,0 +1,40 @@
+/**Called from newAppt.pug
+ * When the popup loads, inject a content script into the active tab,
+ * and add a click handler.
+ * If we couldn't inject the script, handle the error.
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('in newAppt.js');
+    const h1Element = document.querySelector('h1[data-newAppt]');
+    const newAppt = h1Element.getAttribute('data-newAppt');
+    localStorage.setItem('newAppt', newAppt);
+
+})
+listenForClicks();
+//Button click 
+function listenForClicks() {
+    document.addEventListener("click", (e) => {
+        if (e.target.tagName !== "BUTTON" || !e.target.closest("#popupButt")) {
+            // Ignore when click is not on a button within <div id="popupButt">.
+            return;
+        }
+
+        const clickButt = e.target.textContent;
+        const choose = buttonToUrl(clickButt);
+        const currentOrigin = window.location.origin;
+        const fUrl = `${currentOrigin}/${choose}`;
+        window.location.href = fUrl;
+        function buttonToUrl(popupButt) {
+            var ret;
+            switch (popupButt) {
+                case "User Name":
+                    ret = "unGenAppt";
+                    return ret;
+                case "Delete":
+                    ret = "delApptRec";
+                    return ret;
+
+            }
+        }
+    });
+}

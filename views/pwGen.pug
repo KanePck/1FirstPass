@@ -9,7 +9,7 @@ html
           colspan.nav
               a(href='/') Home
           colspan.nav
-              a(href='/postLogin') Select Old/New URL
+              a(href='/postLogin') Select Old/New URL/APP
           colspan.nav
               a(href='/aboutUs') About us   
           colspan.nav
@@ -19,7 +19,7 @@ html
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
     script(src='/scripts/getToken.js')
   body
-    script.
+    script(nonce=nonce).
           var usrName = localStorage.getItem('usrName');
           console.log('usrName: ', usrName);
           document.addEventListener('DOMContentLoaded', function() {

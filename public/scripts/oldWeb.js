@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let noValue = false;
     let dbLoss = false;
     var urlArr = [];
+    const h1Element = document.querySelector('h1[data-apple]');
+    const isApple = h1Element.getAttribute('data-apple');
+    console.log('isApple: ', isApple);
     let importSuccess = false;
     const webBtn = document.getElementById('btn');
     webBtn.addEventListener('click', () => {
@@ -25,6 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Database connection is blocked. Close other tabs or processes using the database.");
         };
         request.onsuccess = (event) => {
+            let n = 0;
+            var tableEntry = document.querySelector('tbody');//tbody
+            if (tableEntry) {
+                tableEntry.innerHTML = '';
+            } else {
+                console.error('tbody element not found');
+                return;
+            }
             db = event.target.result;
             currentVersion = db.version;
             console.log('Open db version no: ', currentVersion, ' done.');
@@ -32,14 +43,81 @@ document.addEventListener('DOMContentLoaded', () => {
                 const message = document.getElementById('mess');
                 message.innerText = "Please select file from pop-up of your computer for importing web credential records to your browser database, due to loss of browser database.";
                 triggerImport(db, dbStoreName);
-                
+                if (importSuccess) {
+                    const mess2 = document.getElementById('mess2');
+                    mess2.innerText = "Import of backup data done, please click: Select Old/New Url, to get old cresential data.";
+                }
             }
-            if (!db.objectStoreNames.contains(dbStoreName)) {
+            try {
+                transaction = db.transaction(dbStoreName, 'readonly');
+                transaction.oncomplete = (event) => {
+                    console.log('Database store exists.');
+                }
+            } catch (error) {
+                console.error('No database store exists: ', error.message);
+                const no = document.getElementById('none');
+                no.innerHTML = 'Database store not exist on this browser. Please try with the browser that you use when registering.';
+            }
+            const objectStore = transaction.objectStore(dbStoreName);
+            const action = objectStore.openCursor();
+            const authTok = localStorage.getItem('authToken');
+            //console.log('Token: ', authTok);
+            /*if (!db.objectStoreNames.contains(dbStoreName)) {
                 noStore = true;
                 console.log("No db store.");
                 newStore(dbName, dbStoreName);
             }
-            accessStore(dbStoreName);
+            accessStore(dbStoreName);*/
+            action.onsuccess = (event) => {
+                const cursor = event.target.result;
+                const non = document.getElementById('none');
+                const text = document.getElementById('text');
+                if (cursor) {
+                    var cell = cursor.value.url;
+                    urlArr.push(cell);
+                    n += 1;
+                    console.log('n: ', n, 'url: ', cell);
+                    if (n == 1) {
+                        text.innerHTML = 'Please click O and press select which url to obtain the password.';
+
+                    }
+                    var tableRow = document.createElement('tr');
+                    var tableCell = document.createElement('td');
+                    var form = document.createElement('form');
+                    form.action = '/getWebPwd';
+                    form.method = 'post';
+                    var radioInput = document.createElement('input');
+                    radioInput.type = 'radio';
+                    radioInput.name = 'url';
+                    radioInput.value = cell;
+                    var label = document.createElement('label');
+                    label.textContent = cell;
+                    var button = document.createElement('button');
+                    button.form = form;
+                    button.type = 'submit';
+                    button.textContent = 'Select';
+                    button.name = 'token';
+                    button.value = authTok;
+                    form.appendChild(radioInput);
+                    form.appendChild(button);
+                    form.appendChild(label);
+                    tableCell.appendChild(form);
+                    tableCell.appendChild(form);
+                    tableRow.appendChild(tableCell); // Append the table cell to the table row
+                    tableEntry.appendChild(tableRow);
+                    cursor.continue();
+                } else {
+                    if (n == 0) {
+                        non.innerHTML = 'No active url/web yet.';
+                    } else {
+                        console.log('No more entries.');
+                    }
+
+                }
+            };
+            objectStore.onerror = (event) => {
+                console.log('Retrieving data error: ', this.error);
+            };
         };
         request.onupgradeneeded = (evt) => {
             db = evt.target.result;
@@ -65,7 +143,69 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         clickOnce = false;
     })
-
+    function triggerImport(dbUpg, dbStoreName) {
+        // Create and insert a file input element dynamically
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.id = "fileInput";
+        fileInput.style.display = "none"; // Hide the input element
+        const target = document.getElementById('text');
+        document.body.insertBefore(fileInput, target);
+        console.log("isApple-triggerImport: ", isApple);
+        if (isApple === 'yes') {
+            setTimeout(() => {
+                // Create a manual button for file selection
+                const target2 = document.getElementById('text2');
+                const triggerButton = document.createElement("button");
+                triggerButton.innerText = "Select Backup File";
+                document.body.insertBefore(triggerButton, target2);
+                triggerButton.onclick = () => fileInput.click();
+                document.body.appendChild(triggerButton);
+            }, 100); // Small delay to ensure rendering
+        } else {
+            // Simulate click on file input to select the import file
+            fileInput.click();
+        }
+        fileInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                //const trans = dbUpg.transaction(dbStoreName, 'readwrite');
+                //const storeUpg = trans.objectStore(dbStoreName);
+                importData(file);
+            }
+            // Remove the file input element after import
+            document.body.removeChild(fileInput);
+        });
+        function importData(file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const jsonData = event.target.result;
+                const data = JSON.parse(jsonData);//data is obj type variable
+                const trans = dbUpg.transaction(dbStoreName, 'readwrite');
+                const storeUpg = trans.objectStore(dbStoreName);
+                data.forEach((item) => {
+                    const { value } = item;
+                    const action = storeUpg.put(value);//put() will update and insert, add() only insert
+                    action.onsuccess = function () {
+                        console.log("Import data to indexedDB/objectStore");
+                    };
+                    action.onerror = function () {
+                        console.log("Error, import data to indexedDB failed.", event);
+                    };
+                })
+                trans.oncomplete = function () {
+                    importSuccess = true;
+                    const mess2 = document.getElementById('mess2');
+                    mess2.innerText = "Import of backup data done, please click: Select Old/New Url, to get old cresential data.";
+                    console.log("Transaction to import data completed.");
+                }
+                trans.onerror = function (event) {
+                    console.log("Transaction failed: ", event);
+                }
+            };
+            reader.readAsText(file);//Read the file as text
+        }
+    }
     function accessStore(dbStoreName) {
         if (db.version == currentVersion) {
             try {
@@ -155,56 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
         action.onerror = (event) => {
             console.log('Retrieving data error: ', this.error);
         };
-    }
-    function triggerImport(dbUpg, dbStoreName) {
-        // Create and insert a file input element dynamically
-        const fileInput = document.createElement("input");
-        fileInput.type = "file";
-        fileInput.id = "fileInput";
-        fileInput.style.display = "none"; // Hide the input element
-        const target = document.getElementById('text');
-        document.body.insertBefore(fileInput, target);
-        // Simulate click on file input to select the import file
-        fileInput.click();
-        fileInput.addEventListener("change", (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                //const trans = dbUpg.transaction(dbStoreName, 'readwrite');
-                //const storeUpg = trans.objectStore(dbStoreName);
-                importData(file);
-            }
-            // Remove the file input element after import
-            document.body.removeChild(fileInput);
-        });
-        function importData(file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const jsonData = event.target.result;
-                const data = JSON.parse(jsonData);//data is obj type variable
-                const trans = dbUpg.transaction(dbStoreName, 'readwrite');
-                const storeUpg = trans.objectStore(dbStoreName);
-                data.forEach((item) => {
-                    const { value } = item;
-                    const action = storeUpg.put(value);//put() will update and insert, add() only insert
-                    action.onsuccess = function () {
-                        console.log("Import data to indexedDB/objectStore");
-                    };
-                    action.onerror = function () {
-                        console.log("Error, import data to indexedDB failed.", event);
-                    };
-                })
-                trans.oncomplete = function () {
-                    importSuccess = true;
-                    const mess2 = document.getElementById('mess2');
-                    mess2.innerText = "Import of backup data done, please click: Select Old/New Url, to get old cresential data.";
-                    console.log("Transaction to import data completed.");
-                }
-                trans.onerror = function (event) {
-                    console.log("Transaction failed: ", event);
-                }
-            };
-            reader.readAsText(file);//Read the file as text
-        }
     }
     async function newStore(dbName, dbStoreName) {
         const no = document.getElementById('nost');

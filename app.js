@@ -17,6 +17,7 @@ const mongoDBStore = require('connect-mongodb-session')(session);
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
+const helmet = require('helmet');
 var app = express();
 
 var routes = require('./routes/index');
@@ -32,14 +33,18 @@ var supPassw = require('./routes/supPassw');
 var mpassHdlr = require('./routes/mpassHdlr');
 var logPasswHdlr = require('./routes/logPasswHdlr');
 var webAccess = require('./routes/webAccess');
+var appAccess = require('./routes/appAccess');
 //var data = require('./routes/data');
 var delWebRec = require('./routes/delWebRec');
 var userNameGen = require('./routes/userNameGen');
+var delApptRec = require('./routes/delApptRec');
+var unGenAppt = require('./routes/unGenAppt');
 var genWebPw = require('./routes/genWebPw');
 var genWebUn = require('./routes/genWebUn');
 var resultPassw = require('./routes/resultPassw');
 var oldUrl = require('./routes/oldUrl');
 var newUrl = require('./routes/newUrl');
+var newAppt = require('./routes/newAppt');
 var validLogin = require('./routes/validLogin');
 var getWebPwd = require('./routes/getWebPwd');
 var sessionInit = require('./routes/sessionInit');
@@ -47,7 +52,7 @@ var postLogin = require('./routes/postLogin');
 var label = 1; //label of each user photo used in /saveImage
 var count = 1; // no of times user do face login used in /ffi
 var passwCount = 0; // no of times user do password login used in /logPasswHdlr
-var urlObj, sessMgr;
+var urlObj, appleObj, sessMgr, apptObj;
 //var uri = process.env.mongodbUri;
 //var webLoginJSON = { 'url':'', 'WebUserName': '', 'WebPassword': '' };
 //var document = new Document();
@@ -105,7 +110,40 @@ app.use(cookieParser());
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '50mb' })); // To handle large payloads
-
+//generate a random nonce for inline script tags for contentSecurityPolicy
+app.use((req, res, next) => {
+    const nonce = crypto.randomBytes(16).toString('base64');
+    console.log('nonce: ', nonce);
+    res.locals.nonce = nonce;
+    next();
+});
+//Implement Content Security Policy
+app.use(helmet.contentSecurityPolicy({
+    directives: {
+        defaultSrc: ["'none'"],
+        scriptSrc: ["'self'",
+            (req, res) => `'nonce-${res.locals.nonce}'`,
+            "https://cdn.jsdelivr.net",
+            "https://www.googletagmanager.com"],
+        styleSrc: ["'self'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'"],
+        connectSrc: ["'self'", "https://www.google-analytics.com"]
+    }
+}));
+//Implement Strict-Transport-Security
+app.use(helmet.strictTransportSecurity({
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+}));
+//Implement Referrer-Policy
+app.use(helmet.referrerPolicy({
+    policy: "no-referrer"
+}));
+//Sets "X-Content-Type-Options: nosniff"
+//Do not use app.use(helmet()) as it will make all contentSecurityPolicy to be defaults regardless of custom directives
+app.use(helmet.xContentTypeOptions());
 //To create a session using app.use((session))
 //secretKey in window environment variables under advance setting/user variables (not .env file)
 const secretKey = process.env.secretKey || crypto.randomBytes(64).toString('hex');
@@ -123,8 +161,11 @@ app.use(session({ //initialize session
         return crypto.randomUUID() // use UUIDs for session IDs
     },
     secret: secretKey,
-    cookie: {
-        maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
+    cookie: { //1 week, secure for https only, Lax allows some cross-site GETs (e.g. links)
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+        httpOnly: true,
+        secure: true,
+        sameSite: 'Lax'
     },
     store: store,
     resave: true, // required: force lightweight session keep alive (touch)
@@ -144,20 +185,23 @@ app.use('/supPassw', supPassw);
 app.use('/mpassHdlr', mpassHdlr);
 app.use('/logPasswHdlr', logPasswHdlr);
 app.use('/webAccess', webAccess);
+app.use('/appAccess', appAccess);
 //app.use('/data', data);
 app.use('/delWebRec', delWebRec);
 app.use('/userNameGen', userNameGen);
+app.use('/delApptRec', delApptRec);
 app.use('/genWebPw', genWebPw);
 app.use('/genWebUn', genWebUn);
 app.use('/resultPassw', resultPassw);
 app.use('/oldUrl', oldUrl);
 app.use('/newUrl', newUrl);
+app.use('/newAppt', newAppt);
 app.use('/validLogin', validLogin);
 app.use('/getWebPwd', getWebPwd);
 app.use('/sessionInit', sessionInit);
 app.use('/postLogin', postLogin);
-
-//To set up https environment
+app.use('/unGenAppt', unGenAppt);
+//To set up https environment which needed for localhost
 const PORT = process.env.PORT || 1337;
 const hostname = process.env.HOSTNAME || 'localhost';
 const isHttps = process.env.HTTPS === 'true';
@@ -394,7 +438,7 @@ app.post('/login', function (req, res) { //Called from index.pug
             if (face&&faceDb) {
                 res.render('photoLog.pug', { username: name });
             } else {
-                res.render('passwLog.pug', {username: name });
+                res.render('passwLog.pug', { username: name, nonce: res.locals.nonce });
             }
             
         } else {
@@ -578,18 +622,18 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
             bcrypt.compare(passw, hashP, function (err, result) {
                 if (result == true) {
                     const promise3 = findUsrId(name);//this function obtain usrId
-                    const promise4 = getUsrAgent(name)//
+                    const promise4 = 44; // getUsrAgent(name) not needed here
                     Promise.all([promise3, promise4]) //promise.all-2
                         .then(() => {
                             usrData = { 'id': usrId, 'username': name };
-                            authTok = sess.sessLogin(usrData);//authTok life is 2 hours
+                            authTok = sess.sessLogin(usrData);//see session.js-authTok life is 12 hours
                             console.log('logPasswHdlr Token: ', authTok);
                             req.session.usrId = usrId;
                             req.session.usrName = name;
                             req.session.authToken = authTok;
                             req.session.login = true;
-                            userAgent={'Browser': browser, 'OS': os, 'CPU': cpu};
-                            res.render('validLogin.pug', { authTok, usrData, userAgent })
+                            //userAgent={'Browser': browser, 'OS': os, 'CPU': cpu};
+                            res.render('validLogin.pug', { authTok, usrData, nonce: res.locals.nonce });
                         })
                         .catch((error) => {
                             console.error('promise.all-2 error: ', error);
@@ -597,7 +641,7 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
                 } else {
                     if (passwCount < 3) {
                         //console.log('remaing count: ', remCount, 'name: ', name);
-                        res.render('rePasswLog.pug', { usrObj});
+                        res.render('rePasswLog.pug', { usrObj, nonce: res.locals.nonce });
                     } else {
                         res.render('fail3logPw.pug');
                     }
@@ -634,7 +678,7 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
                 os = doc.os;
                 cpu = doc.cpu;
                 console.log('browser: ', browser, ' os: ', os, ' cpu: ', cpu);
-                
+
             } else {
                 console.log(`New user so cannot get user-agent of ${name}`);
                 browser = 'None because you are new user.';
@@ -646,10 +690,31 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
             console.log(err);
         }
 
-    }
+    }    
 });
 app.post('/webAccess', function (req, res) { //Called from validLogin.pug
     var url;
+    var apple = 'no';
+    //To obtain userAgent - browser, os, cpu, etc
+    const userAgent = req.headers['user-agent'];
+    //var browserUse, os, cpu, device, engine;
+    // Initialize the parser with the user agent string
+    if (userAgent) {
+        let parser = new uaParser();
+        parser.setUA(userAgent);
+        let result = parser.getResult();
+        if (result.device.vendor === "Apple" ||
+            /iPhone|iPad|Mac/.test(result.device.model) ||
+            result.os.name === "Mac OS") {
+            apple = 'yes';
+        } 
+
+    } else {
+        console.log('User-Agent header is missing');
+    }
+    console.log('Apple: ', apple)
+    var appleObj = { 'isApple': apple };
+    console.log('appleObj before render: ', appleObj.isApple);
     var oldNew = req.body.oldNew;
     if (oldNew == 'new') {
         url = req.body.newUrl;
@@ -661,20 +726,75 @@ app.post('/webAccess', function (req, res) { //Called from validLogin.pug
         res.render('newUrl.pug', {urlObj});
         
     } else if (oldNew == 'old') {
-        res.render('oldUrl.pug');
+        res.render('oldUrl.pug', { appleObj });
         
     } else {
         // Handle other cases or provide an appropriate response
         res.status(400).json({ error: 'Invalid value for oldNew' });
     }
-    
+    function isAppleDevice() {
+        const parser = new UAParser();
+        const result = parser.getResult();
+        return result.device.vendor === "Apple" || /iPhone|iPad|Mac/.test(result.device.model) || result.os.name === "Mac OS";
+    }
 })
+app.post('/appAccess', function (req, res) { //Called from validLogin.pug
+    var appt;
+    var apple = 'no';
+    //To obtain userAgent - browser, os, cpu, etc
+    const userAgent = req.headers['user-agent'];
+    //var browserUse, os, cpu, device, engine;
+    // Initialize the parser with the user agent string
+    if (userAgent) {
+        let parser = new uaParser();
+        parser.setUA(userAgent);
+        let result = parser.getResult();
+        if (result.device.vendor === "Apple" ||
+            /iPhone|iPad|Mac/.test(result.device.model) ||
+            result.os.name === "Mac OS") {
+            apple = 'yes';
+        }
 
+    } else {
+        console.log('User-Agent header is missing');
+    }
+    console.log('Apple: ', apple)
+    var appleObj = { 'isApple': apple };
+    console.log('appleObj before render: ', appleObj.isApple);
+    var oldNew = req.body.oldNew;
+    if (oldNew == 'new') {
+        appt = req.body.newApp;
+        apptObj = { appt: appt };//apptObj is global var
+        let apptUn = '';
+        let apptPw = '';
+        data.setDataObj(appt, apptUn, apptPw);
+        //indexedDbId += 1;
+        res.render('newAppt.pug', { apptObj });
+
+    } else if (oldNew == 'old') {
+        res.render('oldAppt.pug', { appleObj });
+
+    } else {
+        // Handle other cases or provide an appropriate response
+        res.status(400).json({ error: 'Invalid value for oldNew' });
+    }
+    function isAppleDevice() {
+        const parser = new UAParser();
+        const result = parser.getResult();
+        return result.device.vendor === "Apple" || /iPhone|iPad|Mac/.test(result.device.model) || result.os.name === "Mac OS";
+    }
+})
 app.get('/delWebRec', function (req, res) {
     res.render('delWebRec.pug', {urlObj});
 })
 app.get('/userNameGen', function (req, res) {
-    res.render('unGen.pug');
+    res.render('unGen.pug', { nonce: res.locals.nonce });
+})
+app.get('/delApptRec', function (req, res) {
+    res.render('delApptRec.pug', { apptObj });
+})
+app.get('/unGenAppt', function (req, res) {
+    res.render('unGenAppt.pug', { nonce: res.locals.nonce });
 })
 app.post('/genWebPw', function (req, res) {
     console.log('reqBody: ', req.body, 'reqSelf: ', req.body.self);
@@ -721,7 +841,7 @@ app.post('/genWebPw', function (req, res) {
         console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
         console.log('url: ', pwObj.url, ', webUserName:', webUserName, ', password: ', password);
         // Display the password and to store login credentials
-        res.render('resultPassw.pug', { pwObj });
+        res.render('resultPassw.pug', { pwObj, nonce: res.locals.nonce });
     } else if (result.error) {
         if (result.error.name === 'TokenExpiredError') {
             console.log('Token has expired');
@@ -798,7 +918,70 @@ app.post('/genWebPw', function (req, res) {
             console.log('First web in genWebPw is False.');
     }
     }*/
- })
+})
+app.post('/genApptPw', function (req, res) {
+    console.log('reqBody: ', req.body, 'reqSelf: ', req.body.self);
+    const apptUserName = req.body.apptUserName;
+    const length = req.body.length;
+    const newAppt = req.body.appt;
+    const usrName = req.body.usrName;
+    console.log('usrName: ', usrName);
+    var lowCase = true;
+    var upCase = true;
+    var num = true;
+    var spec = true;
+    var urlArr = [];
+    var password = '';
+    if (req.body.self) {
+        password = req.body.self;
+    } else {
+        if (req.body.lowCase === 'no') {
+            lowCase = false;
+        }
+        if (req.body.upCase === 'no') {
+            upCase = false;
+        }
+        if (req.body.numChar === 'no') {
+            num = false;
+        }
+        if (req.body.specChar === 'no') {
+            spec = false;
+        }
+        password = generator.generate({
+            length: length,
+            lowercase: lowCase,
+            uppercase: upCase,
+            numbers: num,
+            symbols: spec
+
+        })
+    }
+    let pwObj = { appt: newAppt, apptUn: apptUserName, apptPw: password };
+    const authTok = req.body.token;
+    const message = 'Your authorization to proceed fails, please login again.';
+    var result = sess.sessTokenVrfy(authTok);
+    if (result.decoded) {
+        console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
+        console.log('app: ', pwObj.appt, ', appUserName:', apptUserName, ', password: ', password);
+        // Display the password and to store login credentials
+        res.render('resultPwAppt.pug', { pwObj, nonce: res.locals.nonce });
+    } else if (result.error) {
+        if (result.error.name === 'TokenExpiredError') {
+            console.log('Token has expired');
+            //alert('Your authorization to proceed fails, please login again.');
+            res.render('err.pug', { message });
+        } else if (result.error.name === 'JsonWebTokenError') {
+            console.log('Token is invalid');
+            //alert('Your authorization to proceed fails, please relogin.');
+            res.render('err.pug', { message });
+        } else {
+            console.log('Token verification error:', result.error.message);
+            //alert('Your authorization to proceed fails, please relogin.');
+            res.render('err.pug', { message });
+        }
+    }
+})
+
 app.post('/genWebUn', function (req, res) {
     var webUserName = '';
     if (req.body.self) {
@@ -845,7 +1028,7 @@ app.post('/genWebUn', function (req, res) {
     if (result.decoded) {
         console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
         console.log('User Name: ', webUserName, ', url: ', unObj.url, ', authToken: ', authTok);
-        res.render('pwGen.pug', { unObj });//Next go to generating password page
+        res.render('pwGen.pug', { unObj, nonce: res.locals.nonce });//Next go to generating password page
 
     } else if (result.error) {
         if (result.error.name === 'TokenExpiredError')
@@ -861,6 +1044,75 @@ app.post('/genWebUn', function (req, res) {
             console.log('Token verification error:', result.error.message);
             //alert('Your authorization to proceed fails, please relogin.');
             res.render('err.pug', {message});
+        }
+    }
+    //let unObj = {url: newUrl, webUn: webUserName};
+    //webLoginJSON = unObj.stringify();
+    //console.log('User Name: ', webUserName, 'url: ', unObj.url);
+    //res.render('pwGen.pug', { unObj });//Next go to generating password page
+
+})
+app.post('/genApptUn', function (req, res) {
+    var apptUserName = '';
+    if (req.body.self) {
+        apptUserName = req.body.self;
+    } else {
+        const length = req.body.length;
+        var lowCase = true;
+        var upCase = true;
+        var num = true;
+        var spec = true;
+        if (req.body.lowCase === 'no') {
+            lowCase = false;
+        }
+        if (req.body.upCase === 'no') {
+            upCase = false;
+        }
+        if (req.body.numChar === 'no') {
+            num = false;
+        }
+        if (req.body.specChar === 'no') {
+            spec = false;
+        }
+        apptUserName = generator.generate({
+            length: length,
+            lowercase: lowCase,
+            uppercase: upCase,
+            numbers: num,
+            symbols: spec
+
+        })
+    }
+    const newAppt = req.body.newAppt;
+    /*let obj = data.getDataObj();
+    if (urlObj.url === obj.url) { //urlObj is global variable and assigned value in /webAccess 
+        data.setDataObj(obj.url, webUserName, obj.pwd);
+    } else {
+        data.setDataObj(urlObj.url, webUserName, obj.pwd);
+    }*/
+    const authTok = req.body.token;
+    console.log('Token: ', authTok);
+    var result = sess.sessTokenVrfy(authTok);
+    const message = 'Your authorization to proceed fails, please login again.';
+    let unObj = { appt: newAppt, apptUn: apptUserName };
+    if (result.decoded) {
+        console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
+        console.log('User Name: ', apptUserName, ', App: ', unObj.appt, ', authToken: ', authTok);
+        res.render('pwGenAppt.pug', { unObj, nonce: res.locals.nonce });//Next go to generating password page
+
+    } else if (result.error) {
+        if (result.error.name === 'TokenExpiredError') {
+            console.log('Token has expired');
+            //alert('Your authorization to proceed fails, please login again.');
+            res.render('err.pug', { message });
+        } else if (result.error.name === 'JsonWebTokenError') {
+            console.log('Token is invalid');
+            console.log('User Name: ', apptUserName, ', App: ', unObj.appt, ', authToken: ', authTok);
+            res.render('err.pug', { message });
+        } else {
+            console.log('Token verification error:', result.error.message);
+            //alert('Your authorization to proceed fails, please relogin.');
+            res.render('err.pug', { message });
         }
     }
     //let unObj = {url: newUrl, webUn: webUserName};
@@ -901,7 +1153,7 @@ app.post('/getWebPwd', function (req, res) {
         }
     }
     let webObj = { url: web };
-    res.render('getWebPwd.pug', { webObj });
+    res.render('getWebPwd.pug', { webObj, nonce: res.locals.nonce });
 })
 app.get('/ffi', function (req, res) { //Called from scripts/capPhoto2.js
     var usrData, authTok, usrId, userAgent, browser, os, cpu;
