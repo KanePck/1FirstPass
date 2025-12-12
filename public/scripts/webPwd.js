@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 var tableCell = document.createElement('td');
                 var tableCell2 = document.createElement('td');
                 tableCell.innerText = 'URL/APP: ' + web + ' => Username: '+usrName+ ' =>  Password: ' + passw;
-                tableCell2.innerHTML='<br>'+'Please copy the username/password and paste to login the website/app.'
+                tableCell2.innerHTML='Please copy the username/password and paste to login the website/app.'
                 tableRow.appendChild(tableCell); // Append the table cell to the table row
                 tableRow2.appendChild(tableCell2);
                 tableEntry.appendChild(tableRow);

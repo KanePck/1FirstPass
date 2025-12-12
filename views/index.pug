@@ -33,10 +33,12 @@ html
 		h1#3d Welcome to 1FirstPass website
 		p.box#mission How we can serve you:
 			ul
-				li.list We help you to automate the registration and login to any web page without having to remember thoses passwords.
+				li.list We help you to generate strong password for any web page without having to remember those passwords.
 				li.list Now you only are required to remember one master password or have your face photographed as authorization and access to our web site and we do the rest for you.
+				br
 				li.list Your master password to 1FirstPass are not stored on our server but are encrypted to private and public keys pair, which are used to identify the correct password when loggin in.
-				li.list So you can be certain of very high security of your master password.
+				li.list 2FA is additional security that an OTP is sent to your email after logging in for account authentication.
+				li.list So you can be certain of very high security of your master password and your account.
 				br
 				li.list We do not store any of your web/app secured passwords or credentials on our server.
 				li.list The secured passwords are stored in your web browsers and on your local computer file system as a backup.
@@ -44,6 +46,7 @@ html
 				br
 				li.list Now, on your pc or laptop, www.1firstpass.com works on all browsers.
 				li.list It will upload the local backup file on to database of the browser, so all your website credentials can be available.
+				br
 				li.list 1FirstPass now also works on android devices(phone, tablet) and ios devices (IPhone, IPad, macBook). You have to send the backup file from one device to another. Then 1FirstPass will upload the file to browser database and list all your websites credential automatically.
 				li.list So www.1firstpass.com can be your ultimate management and storage of all your website credentials.
 		p#user Login or Register
@@ -75,12 +78,13 @@ html
 				br
 				label(for='email') Email: 
 				br
-				input#email(type='email', name='email' required, value='Email address')
+				input#email(type='email', name='email' required, placeholder='Email address')
 				br
 				br
-				label(for='phone') Phone No: 
+				label(for='phone') Phone No: Please enter international format "CountryCodePhoneNo"
 				br
-				input#phone(type='tel', name='phone', pattern="[+]?[0-9]{1,3}?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}")
+				input#phone(type='tel', name='phone', placeholder = "Countrycode+PhoneNo", pattern="^\[1-9]\d{1,14}$", 
+				            title='Enter phone number in international format, e.g. 66891234567', required)
 				br
 				br
 				button(type='submit') Sign up

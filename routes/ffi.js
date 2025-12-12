@@ -2,9 +2,9 @@
 var express = require('express');
 var router = express.Router();
 var app = express();
-const ffin = require('ffi-napi');
-const ref = require('ref-napi');
-const { body } = require('../node_modules/express-validator/src/index');
+//const koffi = require('koffi');
+//const ref = require('ref-napi');
+//const { body } = require('../node_modules/express-validator/src/index');
 app.set('view engine', 'pug');
 app.set('views', './views');
 app.get('/ffi', function (req, res) {

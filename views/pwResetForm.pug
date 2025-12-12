@@ -1,4 +1,3 @@
-//Called from /signup
 doctype html
 html
   nav.navbar.navbar-inverse
@@ -16,13 +15,13 @@ html
   head
     Title User to provide a master password
     link(rel='stylesheet', href='/stylesheets/main.css')
-    script(src='/scripts/checkPassw.js')
+    script(src='/scripts/checkPassw.js')    
   body
   .contentarea
-  h1 Master password is required and self photo is optional.
+  h1 Master password is required and no self photo.
   p The password is to have total at least 8 and no more than 16 letters including small, capital letters, number and special characters.
   p#passw 
-        form(action='/mpassHdlr', id='passw', method='post') #{username}, New User: please input new password
+        form(action='/mpassHdlr', id='passw', method='post') #{usrName}, please input new password
                 br
                 br
                 label(for='passw') Password: (8-16 characters) 
@@ -32,16 +31,14 @@ html
                 br
                 label(for='confPassw') Confirmed Password: 
                 br
-                input#2passw(type='password', name='cPassw' required, onkeyup='checkPassw.js', value='')
+                input#2passw(type='password', name='cPassw' required, value='')
                 br
                 span#message
                 br
                 br
-                input#photo(name='option', type='radio', value='photo')
-                | Option self photo
                 input#noPhoto(checked='checked', name='option', type='radio', value='noPhoto')
                 | No self photo
-                input(type='hidden', name= 'usrName', value=`${username}`)
+                input(type='hidden', name= 'usrName', value=`${usrName}`)
                 br
                 br
                 button(type='submit') Submit

@@ -1,0 +1,97 @@
+doctype html
+html
+    nav.navbar.navbar-inverse
+    .container-fluid
+      .navbar-header
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
+              a(href='/') Home
+          colspan.nav
+              a(href='/aboutUs') About us   
+          colspan.nav
+              a(href='/contactUs') Contact us
+    head
+        title MFA/OTP submission
+        link(rel='stylesheet', href='/stylesheets/otpForm.css')
+        script(src='/scripts/otpForm.js')
+    body
+        h1 Please enter OTP
+        p 
+        | Time remaining for sending the OTP :
+        span#otpTimer 05:00
+        form#otpForm(action='/otpVerify', method='post', class ='otpContainer')
+         ul
+           li.list#otpInputs OTP Input 
+            input(type="text" autofocus, name='d1', class="otpInput", maxlength="1", data-index="0" required)
+            input(type="text", name='d2', class="otpInput", maxlength="1", data-index="1" required)
+            input(type="text", name='d3', class="otpInput", maxlength="1", data-index="2" required)
+            input(type="text", name='d4', class="otpInput", maxlength="1", data-index="3" required)
+            input(type="text", name='d5', class="otpInput", maxlength="1", data-index="4" required)
+            input(type="text", name='d6', class="otpInput", maxlength="1", data-index="5" required)
+            br
+            br
+            button#submitOtpButt(type='submit') Send code
+            br
+            br
+           li.list Time before requesting new OTP is allowed :
+            span#resendTimer 01:00 
+            button#resendButt No new OTP request
+           input#mail(type = 'hidden', name = 'email', value=`${usrEmPh.email}`)
+           input#phone(type = 'hidden', name = 'phone', value = `${usrEmPh.phone}`)
+           input#usrId(type = 'hidden', name = 'id', value =`${usrData.id}`)
+           input#usrName(type = 'hidden', name = 'name', value =`${usrData.name}`)
+           input#authTok(type = 'hidden', name = 'auTok', value = `${authTok}`)
+           input#key(type = 'hidden', name = 'key', value = `${key}`)
+           br
+           br
+           script(nonce=nonce).
+              // 1. Select all OTP input fields
+              const otpInputs = document.querySelectorAll('#otpInputs .otpInput');
+              // 2. Attach a single event listener to the container for efficiency
+              document.getElementById('otpInputs').addEventListener('input', (event) => {
+                 // Only process events originating from an input field
+                 if (event.target.classList.contains('otpInput')) {
+                     const input = event.target;
+                     const index = parseInt(input.dataset.index);
+                     // Check if a digit was entered (input has a value) AND if it's not the last input field
+                     if (input.value.length === input.maxLength && index < otpInputs.length - 1) {
+                     // Auto-focus the next input field
+                     otpInputs[index + 1].focus();
+                     }
+                 }
+              });
+              // 3. Handle 'keydown' for backspace behavior (moving backward)
+              document.getElementById('otpInputs').addEventListener('keydown', (event) => {
+                 // Only process events originating from an input field
+                 if (event.target.classList.contains('otpInput')) {
+                     const input = event.target;
+                     const index = parseInt(input.dataset.index);
+                     // If the Backspace key is pressed AND the current input is empty
+                     if (event.key === 'Backspace' && input.value === '' && index > 0) {
+                         // Prevent default backspace action (which is just deleting)
+                         event.preventDefault();
+                         // Move focus to the previous input field
+                        otpInputs[index - 1].focus();
+                        // Clear the value of the previous input field
+                        otpInputs[index - 1].value = '';
+                     }
+                 }
+              });
+              // Optional: Auto-select/clear content on focus
+              otpInputs.forEach(input => {
+                 input.addEventListener('focus', (e) => {
+                    // Clear value when focusing on an input, useful for re-entry
+                    e.target.select(); 
+                 });
+              });
+           br
+        footer
+           p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+           address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+           p
+           colspan 
+              a(href='/tnc') Terms&Conditions  
+           colspan 
+              a(href='/privPo') Privacy Policy

@@ -7,7 +7,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var uaParser = require('ua-parser-js');
 
-const ffin = require('ffi-napi');
+const koffi = require('koffi');
 const ref = require('ref-napi');
 const bcrypt = require('bcrypt');
 const generator = require('generate-password');
@@ -18,11 +18,14 @@ const https = require('https');
 const http = require('http');
 const fs = require('fs');
 const helmet = require('helmet');
+const { createClient } = require('redis');//This matches the modern CommonJS export style of node-redis@4.x
+//const { SMTPClient } = require('emailjs');
+const nodemailer = require('nodemailer');
 var app = express();
 
 var routes = require('./routes/index');
 var signup = require('./routes/signup');
-var err = require('./routes/error');
+var error = require('./routes/error');
 var photoCap = require('./routes/photoCap');
 var ffi = require('./routes/ffi');
 var saveImage = require('./routes/saveImage');
@@ -46,28 +49,31 @@ var oldUrl = require('./routes/oldUrl');
 var newUrl = require('./routes/newUrl');
 var newAppt = require('./routes/newAppt');
 var validLogin = require('./routes/validLogin');
+var mfa = require('./routes/mfa');
+var otpSubmit = require('./routes/otpSubmit');
 var getWebPwd = require('./routes/getWebPwd');
 var sessionInit = require('./routes/sessionInit');
 var postLogin = require('./routes/postLogin');
 var label = 1; //label of each user photo used in /saveImage
 var count = 1; // no of times user do face login used in /ffi
 var passwCount = 0; // no of times user do password login used in /logPasswHdlr
-var urlObj, appleObj, sessMgr, apptObj;
+var urlObj, appleObj, sessMgr, apptObj, redisClient;
 //var uri = process.env.mongodbUri;
 //var webLoginJSON = { 'url':'', 'WebUserName': '', 'WebPassword': '' };
 //var document = new Document();
 const { body, validationResult } = require("express-validator");
 const { isLength } = require('validator');
 const { isEmail } = require('validator');
-const { checkSchema, matchedData } = require('./node_modules/express-validator/src/index');
+const { checkSchema, matchedData } = require('express-validator');//('./node_modules/express-validator/src/index');
 const Users = require('./routes/dbModels/Users');
 const UserKeys = require('./routes/dbModels/UserKeys');
 const UserWebs = require('./routes/dbModels/UserWebs');
 const uName = require('./routes/uName');
 const data = require('./routes/data');
 const sess = require('./routes/session');
-//console.log('Environment Variables:', process.env);
 
+//This app.set is required in production in case the project is behind one proxy (like nginx) 
+//app.set('trust proxy', 1);//This ensures cookies and sessions work properly with HTTPS and proxies.
 // Set up mongoose connection
 const mongoose = require("mongoose");
 mongoose.set("strictQuery", false);
@@ -96,6 +102,20 @@ async function closeDB() {
     await mongoose.connection.close();
     console.log('Mongodb closed successfully');
 }
+//Start redisClient
+async function startRedis() {
+    redisClient = createClient(); //createClient declared line 21
+    redisClient.on('error', (err) => console.error('Redis error:', err));
+    await redisClient.connect()
+        .then(() => {
+            console.log('Redis client connected successfully');
+        })
+        .catch((err) => {
+            const message = 'Redis connection error.';
+            console.error('Redis connection error:', err);
+            res.render('err.pug', message);
+        });
+}
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -113,7 +133,7 @@ app.use(express.json({ limit: '50mb' })); // To handle large payloads
 //generate a random nonce for inline script tags for contentSecurityPolicy
 app.use((req, res, next) => {
     const nonce = crypto.randomBytes(16).toString('base64');
-    console.log('nonce: ', nonce);
+    //console.log('nonce: ', nonce);
     res.locals.nonce = nonce;
     next();
 });
@@ -153,6 +173,9 @@ var store = new mongoDBStore({
     uri: uri,
     collection: 'mySession'
 });
+store.on('connected', function () {
+    console.log('Session store connected');
+});
 store.on('error', function (error) {
     console.log(error);
 });
@@ -169,12 +192,12 @@ app.use(session({ //initialize session
     },
     store: store,
     resave: true, // required: force lightweight session keep alive (touch)
-    saveUninitialized: true, //  recommended false: only save session when data exists
+    saveUninitialized: false, //  recommended false: only save session when data exists
 
 })) //End of creation of app.use((session))
 app.use('/', routes);
 app.use('/signup', signup);
-app.use('/error', err);
+app.use('/error', error);
 app.use('/photoCap', photoCap);
 app.use('/saveImage', saveImage);
 app.use('/sup', sup);
@@ -197,6 +220,8 @@ app.use('/oldUrl', oldUrl);
 app.use('/newUrl', newUrl);
 app.use('/newAppt', newAppt);
 app.use('/validLogin', validLogin);
+app.use('/mfa', mfa);
+app.use('/otpSubmit', otpSubmit);
 app.use('/getWebPwd', getWebPwd);
 app.use('/sessionInit', sessionInit);
 app.use('/postLogin', postLogin);
@@ -242,6 +267,7 @@ app.get('/sessionInit', function (req, res) {
         const sessId = req.sessionID;
         req.session.timestamp = new Date().toISOString();
         req.session.login = false;
+        req.session.pwReset = false; //Needed here to prevent unintention to start to reset password
         const sessObj = { sessionId: req.sessionID, timestamp: req.session.timestamp, login: req.session.login };
         console.log('sessId: ', sessObj.sessionId, ', times: ', req.session.timestamp);
         //To create persistent user unique id to check if returning user
@@ -488,7 +514,7 @@ app.post('/mpassHdlr', function (req, res) {
     }
 
     if (passw1 != passw2) {
-        return res.render('mpassErr.pug', {username: usName});
+        return res.render('mpassErr.pug', { username: usName });
     }
     // Regular expression for capital letters
     const capitalRegExp = /[A-Z]/;
@@ -503,12 +529,14 @@ app.post('/mpassHdlr', function (req, res) {
     const strongPasswordRegExp = new RegExp('^(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[!@#$%^&*()_+\-=\[\]{};:\'"?/?.<>|,\\]).{8,}$');
 
     if (!capitalRegExp.test(passw1) || !numberRegExp.test(passw1) || !specialCharRegExp.test(passw1) || passw1.length < 8) {
-        return res.render('passwNotStrong.pug', {username: usName});
+        return res.render('passwNotStrong.pug', { username: usName });
     }
     console.log('passwork check complete');
-    
-    //To get option of face photo
-    updDbFace();
+    if (!req.session.pwReset) {
+        //To get option of face photo
+        console.log('req.session.pwReset: false');
+        updDbFace();
+    }
     var salt, hashPassw;
     var drvKey = Buffer.alloc(64);
     const promise1 = genHashDkey(passw1)
@@ -519,6 +547,7 @@ app.post('/mpassHdlr', function (req, res) {
             console.error('genHashDkey error: ', error);
         });
     const promise2 = 22;
+    let promise3, promise4;
     Promise.all([promise1, promise2])
         .then(() => {
             const { publicKey, privateKey, } = generateKeyPairSync('rsa', {
@@ -536,24 +565,41 @@ app.post('/mpassHdlr', function (req, res) {
             });
             encryptPrvKey = privateKey;
             //pubKey = publicKey;
-            const promise3=userKeysCreate(usName, hashPassw, drvKey, encryptPrvKey, publicKey);//To store User keys data in db
-            //const userStorage = new Vault('user-storage');
-            //userStorage.setItem('publicKey', pubKey);
-            Promise.all([promise1, promise3])
-                .then(() => {
-                    console.log('Promise.all (1+3) done');
-                    if (facePh) {
-                        res.render('photoCap.pug', { username: usName });
-                        return;
-                    }
-                    res.render('supSuccess.pug');
-                })
-            
+            if (!req.session.pwReset) {
+                console.log('req.session.pwReset: false');
+                promise3 = userKeysCreate(usName, hashPassw, drvKey, encryptPrvKey, publicKey);//To store User keys data in db
+                Promise.all([promise1, promise3])
+                    .then(() => {
+                        console.log('Promise.all (1+3) done');
+                        if (facePh) {
+                            res.render('photoCap.pug', { username: usName });
+                            return;
+                        }
+                        res.render('supSuccess.pug');
+                    })
+                    .catch((error) => {
+                        console.error('promise.all (1+3) error: ', error);
+                    });
+            } else {
+                console.log('req.session.pwReset: true')
+                promise4 = userKeysUpdate(usName, hashPassw, drvKey, encryptPrvKey, publicKey);
+                console.log('userKeysUpdate call completed, continuing to Promise.all...');
+                Promise.all([promise1, promise4])
+                    .then(() => {
+                        console.log('Promise.all (1+4) done');
+                        req.session.pwReset = false;
+                        res.render('supSuccess.pug');
+                    })
+                    .catch((error) => {
+                        console.error('promise.all (1+4) error: ', error);
+                    });
+            }
+
         })
         .catch((error) => {
-            console.error('promise.all error: ', error);
+            console.error('promise.all (1+2) error: ', error);
         });
-    
+
     //Some Functions
     async function updDbFace() {
         try {
@@ -604,36 +650,82 @@ app.post('/mpassHdlr', function (req, res) {
         }
 
     }
+    async function userKeysUpdate(usName, hashPw, dKey, enPrvKy, pubKey) {
+        console.log('--- ENTERING userKeysUpdate ---');
+        console.log('Received usName:', usName);
+        try {
+            console.log('userKeysUpdate is in. Target User:', usName); // Log the input
+            const filter = { userName: usName };
+            const update = { hashPassw: hashPw, derivedKey: dKey, encPrvKey: enPrvKy, publicKey: pubKey };
+            // 1. Log the document BEFORE the update
+            const originalDoc = await UserKeys.findOne(filter);
+            if (originalDoc) {
+                console.log('Original hashPassw:', originalDoc.hashPassw ? 'FOUND' : 'NOT FOUND');
+            } else {
+                console.log('Original document NOT FOUND for filter.');
+            }
+            const doc = await UserKeys.findOneAndUpdate(filter, update, { new: true });
+            if (!doc) {
+                console.warn(`User document not found for userName: ${usName}. Filter failed.`);
+                return null;
+            }
+            // Check if the update succeeded by comparing old and new values
+            if (originalDoc && doc.hashPassw !== originalDoc.hashPassw) {
+                console.log('? SUCCESS: hashPassw value has clearly changed.');
+            } else if (originalDoc && doc.hashPassw === originalDoc.hashPassw) {
+                console.log('?? WARNING: hashPassw appears unchanged after update attempt.');
+            } else {
+                // This covers the case where the document was not found or was just created (upsert)
+                console.log('Note: Update success cannot be verified via comparison (new document or filter failed).');
+            }
+        } catch (error) {
+            // Log the full error to get more context than just error.message
+            console.error('Error during userKeysUpdate:', error);
+            throw error; // Crucially, re-throw the error so the caller can handle the failure
+        }
+    }
 });
 app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
     const name = req.body.username;
     const sessId = req.body.sessionId;
     console.log('name: ', name, ', session id: ', sessId);
     var hashP, authTok, usrData, userAgent;
-    passwCount += 1;
+    //var validLogin = false;
+    passwCount += 1; //it is declared=0 initially
     var remCount = 3 - passwCount;
     const passw = req.body.loginPassword;
     const promise1 = findHashPassw(name);
     const promise2 = 22;
     let usrObj = { 'username': name, 'remAttempt': remCount }; //JSON syntax
-    var usrId, browser, os, cpu;
+    var usrInfo, usrId, maskUsrEmPh, usrEmPh, email, mPhone, phoneStr, maskEm, maskPh, browser, os, cpu;
     Promise.all([promise1, promise2]) //promise.all-1
         .then(() => {
             bcrypt.compare(passw, hashP, function (err, result) {
+                const promise3 = findUsrId(name);//this function obtain usrId, email, phone
+                const promise4 = 44; // getUsrAgent(name) not needed here
                 if (result == true) {
-                    const promise3 = findUsrId(name);//this function obtain usrId
-                    const promise4 = 44; // getUsrAgent(name) not needed here
                     Promise.all([promise3, promise4]) //promise.all-2
-                        .then(() => {
-                            usrData = { 'id': usrId, 'username': name };
+                        .then(([usrInfo, prom4]) => {
+                            console.log('Promise done, id: ', usrInfo.id , 'email: ', usrInfo.email, 'phone: ', usrInfo.phone);
+                            usrData = { 'id': usrInfo.id, 'name': name};
+                            maskEm = maskEmail(email);//email and phoneStr obtained from findUsrId(name)
+                            maskPh = maskPhone(phoneStr);
+                            maskUsrEmPh = { 'username': name, 'email': maskEm, 'phone': maskPh };
                             authTok = sess.sessLogin(usrData);//see session.js-authTok life is 12 hours
-                            console.log('logPasswHdlr Token: ', authTok);
-                            req.session.usrId = usrId;
+                            usrEmPh = { 'username': name, 'email': email, 'phone': phoneStr };
+                            //console.log('logPasswHdlr Token: ', authTok);
+                            req.session.usrId = usrInfo.id;
                             req.session.usrName = name;
                             req.session.authToken = authTok;
                             req.session.login = true;
-                            //userAgent={'Browser': browser, 'OS': os, 'CPU': cpu};
-                            res.render('validLogin.pug', { authTok, usrData, nonce: res.locals.nonce });
+                            //validLogin = true; done in sessLocStore.js
+                            //sessData={'userId': usrId, 'userName': name, 'loginValid': req.session.login};
+                            //if (name == 'Kane') {
+                            res.render('mfa.pug', { authTok, usrInfo, usrEmPh, maskUsrEmPh });
+                            /*} else {
+                                res.render('validLogin.pug', { authTok, usrData, nonce: res.locals.nonce });
+                            }*/
+                                                        
                         })
                         .catch((error) => {
                             console.error('promise.all-2 error: ', error);
@@ -643,7 +735,23 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
                         //console.log('remaing count: ', remCount, 'name: ', name);
                         res.render('rePasswLog.pug', { usrObj, nonce: res.locals.nonce });
                     } else {
-                        res.render('fail3logPw.pug');
+                        Promise.all([promise3, promise4]) //promise.all-2
+                            .then(([usrInfo, prom4]) => {
+                                console.log('Promise done, id: ', usrInfo.id, 'email: ', usrInfo.email, 'phone: ', usrInfo.phone);
+                                usrData = { 'id': usrInfo.id, 'name': name };
+                                maskEm = maskEmail(email);//email and phoneStr obtained from findUsrId(name)
+                                maskPh = maskPhone(phoneStr);
+                                maskUsrEmPh = { 'username': name, 'email': maskEm, 'phone': maskPh };
+                                authTok = sess.sessLogin(usrData);//see session.js-authTok life is 12 hours
+                                usrEmPh = { 'username': name, 'email': email, 'phone': phoneStr };
+                                //console.log('logPasswHdlr Token: ', authTok);
+                                passwCount = 0;
+                                req.session.usrId = usrInfo.id;
+                                req.session.usrName = name;
+                                req.session.authToken = authTok;
+                                req.session.login = false;
+                                res.render('fail3logPw.pug', { authTok, usrInfo, usrEmPh, maskUsrEmPh });
+                            })
                     }
                 }
             }); 
@@ -666,9 +774,28 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
         const query = Users.findOne({ userName: `${name}` });
         const doc = await query.exec();
         usrId = doc.id;
-        console.log('id: ', usrId);
-        
+        email = doc.email;
+        mPhone = doc.mPhone;
+        phoneStr = '+'+mPhone.toString();
+        //console.log('id: ', usrId, 'email: ', email, 'phone: ', mPhone);
+        usrInfo = { 'name': name, 'id': usrId, 'email': email, 'phone': mPhone };
+        //console.log('usrData id: ', usrData2.id, 'email: ', usrData2.email, 'phone: ', usrData2.phone);
+        return usrInfo;
     }
+    //maskEmail("kane.dev@domain.com") Output: ka *** ev@domain.com/
+    function maskEmail(email) {
+        const [user, domain] = email.split("@");
+        const visibleStart = user.slice(0, 1);
+        const visibleEnd = user.slice(-2);
+        return `${visibleStart}******${visibleEnd}@${domain}`;
+    }
+    //maskPhone("+66-891234123") Output: +66****123
+    function maskPhone(phone) {
+        const visibleStart = phone.slice(0, 2); // e.g., "+66-89"
+        const visibleEnd = phone.slice(-3);    // e.g., "123"
+        return `${visibleStart}******${visibleEnd}`;
+    }
+
     async function getUsrAgent(name) { //to find user-agent info
         try {
             const query = UserWebs.findOne({ userName: name });
@@ -692,6 +819,236 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
 
     }    
 });
+//Call from fail3logPw.pug
+app.post('/pwReset', (req, res) => {
+    const resetPw = req.body.resetPw;
+    if (resetPw == 'no') {
+        res.redirect('/sessionInit');
+    } else {
+        if (resetPw == 'yes') {
+            req.session.pwReset = true;
+            req.session.save(function (err) {
+                if (err) {
+                    // Handle error appropriately
+                    return res.render('err.pug', { message: 'Session error. Try again.' });
+                }
+                console.log('req.session.pwReset: true');
+                reset();
+            });
+        } else {
+            const message = 'Error! Try again.';
+            res.render('err.pug', { message });
+        }
+    }
+    function reset() {
+        const eml = req.body.email;
+        const phn = req.body.phone;
+        const maskEm = req.body.maskEmail;
+        const maskPh = req.body.maskPhone;
+        const usrId = req.body.id;
+        const usrName = req.body.name;
+        const authTok = req.body.auTok;
+        const usrInfo = { 'name': usrName, 'id': usrId, 'email': eml, 'phone': phn };
+        const usrEmPh = { 'username': usrName, 'email': eml, 'phone': phn };
+        const maskUsrEmPh = { 'username': usrName, 'email': maskEm, 'phone': maskPh };
+        res.render('mfa.pug', { authTok, usrInfo, usrEmPh, maskUsrEmPh });
+    }
+});    
+//Call from mfa.pug
+app.post('/mfa', (req, res) => { //called from mfa.pug
+    const promise1 = startRedis(); //Global function line 105
+    const authMet = req.body.authMeth;
+    const eml = req.body.email;
+    const phn = req.body.phone;
+    const usrId = req.body.id;
+    const usrName = req.body.name;
+    const authTok = req.body.auTok;
+    const usrEmPh = { 'email': eml, 'phone': phn };
+    const usrData = { 'id': usrId, 'name': usrName };
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    //const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    //trim() removes leading/trailing white space
+    const normEml = typeof eml === 'string' ? eml.trim().toLowerCase() : '';
+    console.log('email: ', eml, 'normEml: ', normEml, 'id:', usrId, 'name: ', usrName);
+    let operation = '';
+    if (!req.session.pwReset) {
+        operation = 'login';
+    } else {
+        operation = 'passwordReset';
+    }
+    //genOtp(authMeth, eml, phn);
+    const timestamp = Date.now();// date/time in millisecond
+    if (authMet == 'email') {
+        const key = `otp:${operation}:${normEml}:${timestamp}`;
+        console.log('KEy: ', key);
+        const promise2 = setOtp(otp, key);
+        Promise.all([promise1, promise2]) //promise.all-1
+            .then(() => {
+                const promise3 = sendMail(otp, normEml);
+                Promise.all([promise2, promise3])
+                    .then(() => {
+                        res.render('otpSubmit.pug', { usrEmPh, usrData, authTok, key, nonce: res.locals.nonce });
+                    })
+                    .catch((error) => {
+                        console.error('promise.all-2 error: ', error);
+                        //req.session.pwReset = false;//To reset pwReset process
+                        const errMessage = 'Error while sending mail, please try again';
+                        res.render('err.pug', { errMessage });
+                    });
+            })
+    } else {
+        if (authMet == 'phone') {
+            const message = 'Authentication via phone not available yet. Please select email method.';
+            res.render('err.pug', { message });
+            /*const key = `otp:${phn}:${timestamp}`;
+            const promise4 = setOtp(otp, key);
+            Promise.all([promise1, promise4]) //promise.all-1
+                .then(() => {
+                    const promise5 = sendSms(otp, phn);
+                    Promise.all([promise4, promise5])
+                        .then(() => {
+                            res.render('otpSubmit.pug', { usrEmPh, usrData, authTok, key, nonce: res.locals.nonce });
+                        })
+                })*/
+        } else {
+            var mess = 'Error! OTP/SMS failed. Please login again.'
+            console.log(mess);
+            res.render('err.pug', { mess });
+        }
+    }
+    async function setOtp(otp, key) {
+        const ttlSeconds = 300; // 5 minutes
+        // Store OTP with expiry
+        await redisClient.set(key, otp, {
+            EX: ttlSeconds,
+            NX: true // Optional: only set if key doesn't exist
+        });
+
+    }
+    async function sendMail(otp, email) {
+        const transporter = nodemailer.createTransport({
+            host: "mail.1firstpass.com", //service: 'gmail', or use host/port for custom SMTP
+            port: 587,
+            secure: false,
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS,
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+
+        });
+        const mailOptions = {
+            from: 'admin@1firstpass.com',
+            to: email,
+            subject: 'Your OTP Code',
+            text: `Your OTP is: ${otp}`,
+            html: `<p>Your OTP is: <strong>${otp}</strong></p>`
+        };
+        try {
+            const info = await transporter.sendMail(mailOptions);
+            console.log("Message sent: %s", info.messageId);
+            console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+        } catch (err) {
+            console.error("Error while sending mail", err);
+        }
+    };
+    async function sendSms(phone) {
+
+    }
+});
+//Call from otpForm.js
+app.post('/reqNewOtp', (req, res) => {
+    const usrId = req.body.id;
+    const usrName = req.body.name;
+    const authTok = req.body.auTok;
+    const eml = req.body.email;
+    const phn = req.body.phone;
+    const usrEmPh = { 'email': eml, 'phone': phn };
+    const usrInfo = { 'id': usrId, 'name': usrName };
+    const maskEml = maskEmail(eml);
+    const maskPhn = maskPhone(phn);
+    const maskUsrEmPh = { 'email': maskEml, 'phone': maskPhn };
+    res.render('mfa.pug', { authTok, usrInfo, usrEmPh, maskUsrEmPh });
+    function maskEmail(email) {
+        const [user, domain] = email.split("@");
+        const visibleStart = user.slice(0, 1);
+        const visibleEnd = user.slice(-2);
+        return `${visibleStart}******${visibleEnd}@${domain}`;
+    }
+    //maskPhone("+66-891234123") Output: +66****123
+    function maskPhone(phone) {
+        const visibleStart = phone.slice(0, 2); // e.g., "+66-89"
+        const visibleEnd = phone.slice(-3);    // e.g., "123"
+        return `${visibleStart}******${visibleEnd}`;
+    }
+});
+//Call from otpSubmit.pug
+app.post('/otpVerify', (req, res) => {
+    const otpD1 = req.body.d1;
+    const otpD2 = req.body.d2;
+    const otpD3 = req.body.d3;
+    const otpD4 = req.body.d4;
+    const otpD5 = req.body.d5;
+    const otpD6 = req.body.d6;
+    const key = req.body.key;
+    const usrId = req.body.id;
+    const usrName = req.body.name;
+    const authTok = req.body.auTok;
+    const otpKeyin = otpD1 + otpD2 + otpD3 + otpD4 + otpD5 + otpD6;
+    const usrData = { 'id': usrId, 'username': usrName };
+    var storedOtp;
+    //console.log('authok: ', authTok, 'user id: ', usrData.id);
+    //Ensure key exists before proceeding
+    if (!key || typeof key !== 'string') {
+        return res.status(400).json({
+            status: 'error',
+            message: 'Missing or invalid key for OTP lookup.'
+        });
+    }
+    // Check if OTP exists and is a valid 6-digit number
+    if (otpKeyin && otpKeyin.length === 6 && /^\d+$/.test(otpKeyin)) {
+        //console.log('Received OTP:', otpKeyin);
+        // Use await here to wait for the Promise to resolve
+        const promise1 = getStoredOtp(key);
+        const promise2 = 22;
+        Promise.all([promise1, promise2])
+            .then(() => {
+                console.log('otpKeyin: ', otpKeyin, ', storedOtp: ', storedOtp);
+                if (otpKeyin === storedOtp) {
+                    redisClient.del(key);
+                    console.log('OTP verified and deleted successfully!');
+                    if (!req.session.pwReset) {
+                        console.log('req.session.pwReset: false');
+                        res.render('validLogin.pug', { authTok, usrData, nonce: res.locals.nonce });
+                    } else {
+                        console.log('req.session.pwReset: true');
+                        //req.session.pwReset = false;
+                        res.render('pwResetForm.pug', {usrName});
+                    }
+                } else {
+                    // Send a JSON error response
+                    const message = 'Invalid OTP. Please try again.';
+                    res.render('err.pug', { message });
+                }
+            })
+    } else {
+        res.status(400).send('Invalid OTP format. Please try again.');
+    }
+    // A function to get the OTP
+    async function getStoredOtp(key) {
+        try {
+            const redisOtp = await redisClient.get(key);
+            //console.log('The stored OTP is:', storedOtp);
+            storedOtp = redisOtp;
+        } catch (error) {
+            console.error('Error getting OTP from Redis:', error);
+            throw error;
+        }
+    }
+});
+//Call from validLogin.pug
 app.post('/webAccess', function (req, res) { //Called from validLogin.pug
     var url;
     var apple = 'no';
@@ -772,7 +1129,7 @@ app.post('/appAccess', function (req, res) { //Called from validLogin.pug
         res.render('newAppt.pug', { apptObj });
 
     } else if (oldNew == 'old') {
-        res.render('oldAppt.pug', { appleObj });
+        res.render('oldUrl.pug', { appleObj });
 
     } else {
         // Handle other cases or provide an appropriate response
@@ -1137,6 +1494,8 @@ app.post('/getWebPwd', function (req, res) {
     const message = 'Your authorization to proceed fails, please login again.';
     if (result.decoded) {
         console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
+        let webObj = { url: web };
+        res.render('getWebPwd.pug', { webObj, nonce: res.locals.nonce });
     } else if (result.error) {
         if (result.error.name === 'TokenExpiredError') {
             console.log('Token has expired');
@@ -1149,74 +1508,76 @@ app.post('/getWebPwd', function (req, res) {
         } else {
             console.log('Token verification error:', result.error.message);
             //alert('Your authorization to proceed fails, please relogin.');
-            res.rener('err.pug', {message});
+            res.render('err.pug', {message});
         }
     }
-    let webObj = { url: web };
-    res.render('getWebPwd.pug', { webObj, nonce: res.locals.nonce });
+
 })
 app.get('/ffi', function (req, res) { //Called from scripts/capPhoto2.js
     var usrData, authTok, usrId, userAgent, browser, os, cpu;
     const queryParam = req.query;
     var name = queryParam.usrName;
     var faceOk = false;
+    let myLib = null;
     console.log(`login name: ${name}`);
-    //var voi=ref.types.void;
-    var int = ref.types.int;
-    var bool = ref.types.bool;
-    var string = ref.types.CString;
     const dllPath = path.join(__dirname, 'x64', 'Release', 'pwdNmLib.dll');//'C:\\Users\\k_pic\\source\\repo\\1FirstPass\\x64\\Release\\pwdNmLib.dll';
     console.log(dllPath);
     if (fs.existsSync(dllPath)) {
         console.log('DLL path exists: ', dllPath);
+        // Define the types for your function return and argument types
+        myLib = koffi.load(dllPath);
+        const genPwd = myLib.func('genPwd', 'char*', ['int', 'bool', 'bool', 'bool']);
+        const coutMessHdlr = myLib.func('coutMessHdlr', 'char*', []);
+        const logFace = myLib.func('logFace', 'bool', ['char*']);
+        faceLogin(name, logFace);
     } else {
         console.log('DLL path does not exist: ', dllPath);
+        const errMess = 'DLL path not exist.';
+        res.render('err.pug', { errMess });
     }
-    // Define the types for your function return and argument types
-    var myFunction = ffin.Library(dllPath, { //'C:\Users\k_pic\source\repo\1FirstPass\x64\Release\pwdNmLib.dll'
-        "genPwd": [string, [int, bool, bool, bool]],
-        "coutMessHdlr": [string,[]],
-        "logFace": [bool, [string]]
-
-    });
-
-    try {
-        faceOk = myFunction.logFace(`${name}`);
-        console.log('catch blog executed');
-    } catch(error) {
-        console.error('Error calling logFace:', error.message);
-    }
-    if (!faceOk) {
-        console.log('Face login fails.');
-        //const message = myFunction.coutMessHdlr();
-        //console.log(message);
-        var rem = 3 - count; //count is global var with initial value = 1
-        let remObj = { "Count": count, "Remain": rem };//JSON syntax
-              
-        console.log(`This is your photo no: ${count} for face login.`);
-        count += 1;
-        if (rem == 0) {
-            count = 1;
-            res.render('fail3Login.pug');
-        } else {
-            res.render('rePhotoLog.pug', { remObj, username: name});
+    function faceLogin(name, logFace) {
+        if (!myLib) {
+            return res.status(500).send('DLL not loaded');
         }
-    } else {
-        console.log(` faceOk: ${faceOk}.`, 'Face login is completed and successful.');
-        const promise3 = findUsrId(name);//this function obtain usrId
-        const promise4 = getUsrAgent(name)//
-        Promise.all([promise3, promise4]) //promise.all-2
-            .then(() => {
-                usrData = { 'id': usrId, 'username': name };
-                authTok = sess.sessLogin(usrData);//authTok life is 2 hours
-                req.session.usrId = usrId;
-                req.session.usrName = name;
-                req.session.authToken = authTok;
-                req.session.login = true;
-                userAgent = { 'Browser': browser, 'OS': os, 'CPU': cpu };
-                res.render('validLogin.pug', { authTok, usrData, userAgent })
-            })
+        try {
+            faceOk = logFace(name);//(`${name}`);
+            console.log('catch blog executed');
+        } catch (error) {
+            console.error('Error calling logFace:', error.message);
+        }
+        if (!faceOk) {
+            console.log('Face login fails.');
+            //const message = myFunction.coutMessHdlr();
+            //console.log(message);
+            var rem = 3 - count; //count is global var with initial value = 1
+            let remObj = { "Count": count, "Remain": rem };//JSON syntax
+
+            console.log(`This is your photo no: ${count} for face login.`);
+            count += 1;
+            if (rem == 0) {
+                count = 1;
+                res.render('fail3Login.pug');
+            } else {
+                res.render('rePhotoLog.pug', { remObj, username: name });
+            }
+        } else {
+            console.log(` faceOk: ${faceOk}.`, 'Face login is completed and successful.');
+            const promise3 = findUsrId(name);//this function obtain usrId
+            const promise4 = getUsrAgent(name)//
+            Promise.all([promise3, promise4]) //promise.all-2
+                .then(() => {
+                    usrData = { 'id': usrId, 'username': name };
+                    authTok = sess.sessLogin(usrData);//authTok life is 2 hours
+                    req.session.usrId = usrId;
+                    req.session.usrName = name;
+                    req.session.authToken = authTok;
+                    req.session.login = true;
+                    userAgent = { 'Browser': browser, 'OS': os, 'CPU': cpu };
+                    res.render('validLogin.pug', { authTok, usrData, userAgent })
+                })
+        }
     }
+
     async function findUsrId(name) {
             const query = Users.findOne({ userName: `${name}` });
             const doc = await query.exec();

@@ -10,7 +10,10 @@ app.post('/error', function (req, res) {
     res.send("Error!");
 });
 router.get('/error', function (req, res) {
-    res.render('err.pug', { title: '' });
+    res.render('err.pug');
 });
-
+app.get('/error', function (req, res) {
+    res.render('err.pug');
+    console.log(req.body);
+});
 module.exports = router;

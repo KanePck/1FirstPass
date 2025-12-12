@@ -16,10 +16,28 @@ html
   head Fail 3 attempts password log in
   title
   link(rel='stylesheet', href='/stylesheets/main.css')
+  //script(src='/scripts/pwReset.js')
   body
-  h1 Sorry! you have failed password logging in 3 attempts
-  script(src='/scripts/camOff.js')
-  h2 Please go back to Home/login and signup page
+  h1(data-name=usrInfo.name) Sorry! you have failed password logging in 3 attempts
+  h2 You can select to reset and set new password.
+  div#pwReset
+  form(action='/pwReset', method='post')
+     input(type='radio', checked, name='resetPw', value='yes')
+     | Reset password
+     br
+     br
+     input(type='radio', name='resetPw', value='no')
+     | Not reset
+     br
+     br
+     button(type='submit') Submit
+     input#mail(type = 'hidden', name = 'email', value=`${usrEmPh.email}`)
+     input#phone(type = 'hidden', name = 'phone', value = `${usrEmPh.phone}`)
+     input#maskM(type = 'hidden', name = 'maskEmail', value=`${maskUsrEmPh.email}`)
+     input#maskM(type = 'hidden', name = 'maskPhone', value=`${maskUsrEmPh.phone}`)
+     input#usrId(type = 'hidden', name = 'id', value =`${usrInfo.id}`)
+     input#name(type = 'hidden', name = 'name', value =`${usrInfo.name}`)
+     input#authTok(type = 'hidden', name = 'auTok', value = `${authTok}`)
   br
   br
   footer

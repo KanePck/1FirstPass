@@ -1,7 +1,6 @@
 //Session control
 var express = require('express');
 var router = express.Router();
-const sessionManager = require('session-store-js');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 var app = express();

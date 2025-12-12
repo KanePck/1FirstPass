@@ -6,44 +6,46 @@
   "scripts": {
     "start": "node app",
     "build": "node-gyp rebuild",
-    "clean": "node-gyp clean"
+    "clean": "node-gyp clean",
+    "install": "node-gyp rebuild"
   },
   "description": "ExpressPwdNoMore",
-  "author": {
-    "name": ""
-  },
+  "author": "",
   "dependencies": {
-    "-": "^0.0.1",
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.15.0",
     "connect-mongodb-session": "^5.0.0",
     "cookie-parser": "^1.4.0",
     "dotenv": "^16.4.5",
+    "emailjs": "^4.0.3",
     "express": "^4.14.0",
     "express-session": "^1.18.1",
     "express-validator": "^7.0.1",
-    "ffi-napi": "^4.0.3",
     "g": "^2.0.1",
     "generate-password": "^1.7.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "jsrsasign": "^11.1.0",
     "jsrsasign-util": "^1.0.5",
+    "koffi": "^2.14.1",
     "mongoose": "^8.3.3",
     "morgan": "^1.7.0",
     "node-addon-api": "^8.0.0",
     "node-gyp": "^10.0.1",
+    "nodemailer": "^7.0.6",
     "pug": "^2.0.0-beta6",
-    "redis": "^4.7.0",
+    "redis": "^5.8.2",
     "ref-napi": "^3.0.3",
-    "session-store-js": "^1.0.1",
     "ua-parser-js": "^1.0.38",
-    "validator": "^13.11.0",
+    "validator": "13.15.22",
     "vault-storage": "^1.3.4"
   },
   "devDependencies": {
     "eslint": "^8.21.0"
   },
-  "eslintConfig": {}
+  "eslintConfig": {},
+  "main": "app.js",
+  "keywords": [],
+  "license": "ISC"
 }

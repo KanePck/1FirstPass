@@ -7,6 +7,7 @@
     <RootNamespace>ExpressPwdNoMore</RootNamespace>
     <LaunchUrl>https://localhost:1337</LaunchUrl>
     <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
+    <NodeExePath>C:\Program Files\nodejs\node.exe</NodeExePath>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -75,6 +76,12 @@
     <Content Include="public\scripts\oldWeb.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="public\scripts\otpForm.js">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="public\scripts\pwReset.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="public\scripts\readWebRec.js">
       <SubType>Code</SubType>
     </Content>
@@ -94,6 +101,9 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="public\stylesheets\oldUrl.css">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="public\stylesheets\otpForm.css">
       <SubType>Code</SubType>
     </Content>
     <Content Include="public\stylesheets\photoCap.css">
@@ -152,6 +162,9 @@
     <Content Include="routes\logPasswHdlr.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="routes\mfa.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="routes\mpassHdlr.js">
       <SubType>Code</SubType>
     </Content>
@@ -162,6 +175,9 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\oldUrl.js">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="routes\otpSubmit.js">
       <SubType>Code</SubType>
     </Content>
     <Content Include="routes\photoCap.js">
@@ -240,6 +256,9 @@
     <Content Include="views\masterPass.pug">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="views\mfa.pug">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="views\mpassErr.pug">
       <SubType>Code</SubType>
     </Content>
@@ -250,6 +269,9 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\oldUrl.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\otpSubmit.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\passwLog.pug">
@@ -274,6 +296,9 @@
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\pwGenAppt.pug">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="views\pwResetForm.pug">
       <SubType>Code</SubType>
     </Content>
     <Content Include="views\rePasswLog.pug">

@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let noValue = false;
     let dbLoss = false;
     var urlArr = [];
+    var appArr = [];
     const h1Element = document.querySelector('h1[data-apple]');
     const isApple = h1Element.getAttribute('data-apple');
     console.log('isApple: ', isApple);
@@ -61,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const objectStore = transaction.objectStore(dbStoreName);
             const action = objectStore.openCursor();
             const authTok = localStorage.getItem('authToken');
+            const pattern = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
             //console.log('Token: ', authTok);
             /*if (!db.objectStoreNames.contains(dbStoreName)) {
                 noStore = true;
@@ -74,7 +76,157 @@ document.addEventListener('DOMContentLoaded', () => {
                 const text = document.getElementById('text');
                 if (cursor) {
                     var cell = cursor.value.url;
-                    urlArr.push(cell);
+                    if (!pattern.test(cell)) {
+                        appArr.push(cell);
+                        console.log('app: ', cell);
+                        cursor.continue();
+                    } else {
+                        urlArr.push(cell);
+                        cursor.continue();
+                    }
+                    n += 1;
+                    if (n == 1) {
+                        text.innerHTML = 'Please click O and press select to obtain the password.';
+                    }
+                } else {
+                    if (n == 0) {
+                        non.innerHTML = 'No active url/web yet.';
+                    } else {
+                        console.log('No more entries.');
+                        var tableRow1 = document.createElement('tr');
+                        //var tableRow2 = document.createElement('tr');
+                        var tableCol1 = document.createElement('td');
+                        var tableCol2 = document.createElement('td');
+                        tableCol1.textContent = 'WEB/URL';
+                        tableCol2.textContent = 'APP';
+                        tableRow1.appendChild(tableCol1);
+                        tableRow1.appendChild(tableCol2);
+                        tableEntry.appendChild(tableRow1);
+                        if (urlArr.length > appArr.length) {
+                            for (i = 0; i < urlArr.length; i++) {
+                                var tableRow2 = document.createElement('tr');
+                                var tableCol3 = document.createElement('td');
+                                var tableCol4 = document.createElement('td');
+                                var form1 = document.createElement('form');
+                                form1.action = '/getWebPwd';
+                                form1.method = 'post';
+                                var form2 = document.createElement('form');
+                                form2.action = '/getWebPwd';
+                                form2.method = 'post';
+                                var radioInput1 = document.createElement('input');
+                                var radioInput2 = document.createElement('input');
+                                var label1 = document.createElement('label');
+                                var label2 = document.createElement('label');
+                                var button1 = document.createElement('button');
+                                var button2 = document.createElement('button');
+                                radioInput1.type = 'radio';
+                                radioInput1.name = 'url';
+                                radioInput1.value = urlArr[i];
+                                label1.textContent = urlArr[i];
+                                console.log('no.', i, ', url: ', urlArr[i]);
+                                button1.form = form1;
+                                button1.type = 'submit';
+                                button1.textContent = 'Select';
+                                button1.name = 'token';
+                                button1.value = authTok;
+                                form1.appendChild(radioInput1);
+                                form1.appendChild(button1);
+                                form1.appendChild(label1);
+                                tableCol3.appendChild(form1);
+                                tableRow2.appendChild(tableCol3); // Append the table cell column to the table row
+                                tableEntry.appendChild(tableRow2);
+                                if (i < appArr.length) {
+                                    radioInput2.type = 'radio';
+                                    radioInput2.name = 'url';
+                                    radioInput2.value = appArr[i];
+                                    label2.textContent = appArr[i];
+                                    console.log('no.', i, ', app: ', appArr[i]);
+                                    button2.form = form2;
+                                    button2.type = 'submit';
+                                    button2.textContent = 'Select';
+                                    button2.name = 'token';
+                                    button2.value = authTok;
+                                    form2.appendChild(radioInput2);
+                                    form2.appendChild(button2);
+                                    form2.appendChild(label2);
+                                    tableCol4.appendChild(form2);
+                                    tableRow2.appendChild(tableCol4); // Append the table cell column to the table row
+                                    tableEntry.appendChild(tableRow2);
+                                } 
+                            }
+                        } else {
+                            for (i = 0; i < appArr.length; i++) {
+                                var tableRow2 = document.createElement('tr');
+                                var tableCol3 = document.createElement('td');
+                                var tableCol4 = document.createElement('td');
+                                var form1 = document.createElement('form');
+                                form1.action = '/getWebPwd';
+                                form1.method = 'post';
+                                var form2 = document.createElement('form');
+                                form2.action = '/getWebPwd';
+                                form2.method = 'post';
+                                var radioInput1 = document.createElement('input');
+                                var radioInput2 = document.createElement('input');
+                                var label1 = document.createElement('label');
+                                var label2 = document.createElement('label');
+                                var button1 = document.createElement('button');
+                                var button2 = document.createElement('button');
+                                radioInput1.type = 'radio';
+                                radioInput1.name = 'url';
+                                radioInput1.value = appArr[i];
+                                label1.textContent = appArr[i];
+                                console.log('no.', i, ', url: ', appArr[i]);
+                                button1.form = form1;
+                                button1.type = 'submit';
+                                button1.textContent = 'Select';
+                                button1.name = 'token';
+                                button1.value = authTok;
+                                form1.appendChild(radioInput1);
+                                form1.appendChild(button1);
+                                form1.appendChild(label1);
+                                tableCol3.appendChild(form1);
+                                tableRow2.appendChild(tableCol3); // Append the table cell column to the table row
+                                tableEntry.appendChild(tableRow2);
+                                if (i < urlArr.length) {
+                                    radioInput2.type = 'radio';
+                                    radioInput2.name = 'url';
+                                    radioInput2.value = urlArr[i];
+                                    label2.textContent = urlArr[i];
+                                    console.log('no.', i, ', url: ', urlArr[i]);
+                                    button2.form = form2;
+                                    button2.type = 'submit';
+                                    button2.textContent = 'Select';
+                                    button2.name = 'token';
+                                    button2.value = authTok;
+                                    form2.appendChild(radioInput2);
+                                    form2.appendChild(button2);
+                                    form2.appendChild(label2);
+                                    tableCol4.appendChild(form2);
+                                    tableRow2.appendChild(tableCol4); // Append the table cell column to the table row
+                                    tableEntry.appendChild(tableRow2);
+                                }
+
+                            }
+                        }
+                    }
+
+                }
+            };
+            objectStore.onerror = (event) => {
+                console.log('Retrieving data error: ', this.error);
+            };
+                
+
+                /*if (cursor) {
+                    var cell = cursor.value.url;
+                    if (!pattern.test(cell)) {
+                        appArr.push(cell);
+                        console.log('app: ', cell);
+                        cursor.continue();
+                    } else {
+                        urlArr.push(cell);
+                        cursor.continue();
+                    }
                     n += 1;
                     console.log('n: ', n, 'url: ', cell);
                     if (n == 1) {
@@ -113,11 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log('No more entries.');
                     }
 
-                }
-            };
-            objectStore.onerror = (event) => {
-                console.log('Retrieving data error: ', this.error);
-            };
+                }*/
+
         };
         request.onupgradeneeded = (evt) => {
             db = evt.target.result;
