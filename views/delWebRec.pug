@@ -17,7 +17,7 @@ html
   head
     title To delete previous record of web login credentials 
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
-    script(src='/scripts/readWebRec.js')
+    script(src='/scripts/readWebRec.js' nonce=nonce)
   body
     p The web that your login user-name and password to be deleted: #{urlObj.url}
     p(data-url=urlObj.url) List of user name and password of this website

@@ -15,21 +15,23 @@ html
   head
     Title User to provide a master password
     link(rel='stylesheet', href='/stylesheets/main.css')
-    script(src='/scripts/checkPassw.js')    
+    script(src='/scripts/checkPwReset.js' nonce=nonce)    
   body
   .contentarea
   h1 Master password is required and no self photo.
   p The password is to have total at least 8 and no more than 16 letters including small, capital letters, number and special characters.
   p#passw 
-        form(action='/mpassHdlr', id='passw', method='post') #{usrName}, please input new password
+        form(action='/mpassHdlr', id='userRegForm', method='post') #{usrName}, please input new password
                 br
                 br
-                label(for='passw') Password: (8-16 characters) 
+                label(for='1passw') Password: (8-16 characters) 
                 br
                 input#1passw(type='password', name='password' required, minlength='8', maxlength='16', value='')
                 br
+                span#mpwq
                 br
-                label(for='confPassw') Confirmed Password: 
+                br
+                label(for='2passw') Confirmed Password: 
                 br
                 input#2passw(type='password', name='cPassw' required, value='')
                 br
@@ -38,10 +40,10 @@ html
                 br
                 input#noPhoto(checked='checked', name='option', type='radio', value='noPhoto')
                 | No self photo
-                input(type='hidden', name= 'usrName', value=`${usrName}`)
+                input#usrNm(type='hidden', name= 'usrName', value=`${usrName}`)
                 br
                 br
-                button(type='submit') Submit
+                button(type='submit') Create Secure Account
   br
   br
   footer

@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let n = 0;
             var tableEntry = document.querySelector('tbody');//tbody
             if (tableEntry) {
-                tableEntry.innerHTML = '';
+                tableEntry.textContent = '';
             } else {
                 console.error('tbody element not found');
                 return;
@@ -57,11 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error('No database store exists: ', error.message);
                 const no = document.getElementById('none');
-                no.innerHTML = 'Database store not exist on this browser. Please try with the browser that you use when registering.';
+                no.innerText = 'Database store not exist on this browser. Please try with the browser that you use when registering.';
             }
             const objectStore = transaction.objectStore(dbStoreName);
             const action = objectStore.openCursor();
-            const authTok = localStorage.getItem('authToken');
+            const authTok = sessionStorage.getItem('authToken');
             const pattern = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
             //console.log('Token: ', authTok);
             /*if (!db.objectStoreNames.contains(dbStoreName)) {
@@ -86,11 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     n += 1;
                     if (n == 1) {
-                        text.innerHTML = 'Please click O and press select to obtain the password.';
+                        text.innerText = 'Please click O and press select to obtain the password.';
                     }
                 } else {
                     if (n == 0) {
-                        non.innerHTML = 'No active url/web yet.';
+                        non.innerText = 'No active url/web yet.';
                     } else {
                         console.log('No more entries.');
                         var tableRow1 = document.createElement('tr');
@@ -215,57 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
             objectStore.onerror = (event) => {
                 console.log('Retrieving data error: ', this.error);
             };
-                
-
-                /*if (cursor) {
-                    var cell = cursor.value.url;
-                    if (!pattern.test(cell)) {
-                        appArr.push(cell);
-                        console.log('app: ', cell);
-                        cursor.continue();
-                    } else {
-                        urlArr.push(cell);
-                        cursor.continue();
-                    }
-                    n += 1;
-                    console.log('n: ', n, 'url: ', cell);
-                    if (n == 1) {
-                        text.innerHTML = 'Please click O and press select which url to obtain the password.';
-
-                    }
-                    var tableRow = document.createElement('tr');
-                    var tableCell = document.createElement('td');
-                    var form = document.createElement('form');
-                    form.action = '/getWebPwd';
-                    form.method = 'post';
-                    var radioInput = document.createElement('input');
-                    radioInput.type = 'radio';
-                    radioInput.name = 'url';
-                    radioInput.value = cell;
-                    var label = document.createElement('label');
-                    label.textContent = cell;
-                    var button = document.createElement('button');
-                    button.form = form;
-                    button.type = 'submit';
-                    button.textContent = 'Select';
-                    button.name = 'token';
-                    button.value = authTok;
-                    form.appendChild(radioInput);
-                    form.appendChild(button);
-                    form.appendChild(label);
-                    tableCell.appendChild(form);
-                    tableCell.appendChild(form);
-                    tableRow.appendChild(tableCell); // Append the table cell to the table row
-                    tableEntry.appendChild(tableRow);
-                    cursor.continue();
-                } else {
-                    if (n == 0) {
-                        non.innerHTML = 'No active url/web yet.';
-                    } else {
-                        console.log('No more entries.');
-                    }
-
-                }*/
 
         };
         request.onupgradeneeded = (evt) => {
@@ -381,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
         var tableEntry = document.querySelector('tbody');//tbody
         //console.log('tableEntry: ', tableEntry); // Check if 'tbody' element is found
         if (tableEntry) {
-            tableEntry.innerHTML = '';
+            tableEntry.innerText = '';
         } else {
             console.error('tbody element not found');
             return;
@@ -400,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 n += 1;
                 console.log('n: ', n, 'url: ', cell);
                 if (n == 1) {
-                    text.innerHTML = 'Please click O and press select which url to obtain the password.';
+                    text.innerText = 'Please click O and press select which url to obtain the password.';
 
                 }
                 var tableRow = document.createElement('tr');
@@ -434,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cursor.continue();
             } else {
                 if (n == 0) {
-                    non.innerHTML = 'No active url/web yet.';
+                    non.innerText = 'No active url/web yet.';
                 } else {
                     console.log('No more entries.');
                 }
@@ -447,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     async function newStore(dbName, dbStoreName) {
         const no = document.getElementById('nost');
-        no.innerHTML = 'Database store neither exist nor has values . Old website credential data will be uploaded to the object store.';
+        no.innerText = 'Database store neither exist nor has values . Old website credential data will be uploaded to the object store.';
         db.close;
         console.log("Current db closed.");
         try {

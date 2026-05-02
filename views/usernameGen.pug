@@ -1,3 +1,4 @@
+//Call from /webAccess2
 doctype html
 html
   nav.navbar.navbar-inverse
@@ -19,17 +20,8 @@ html
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
     script(src='/scripts/getToken.js' nonce=nonce)
   body
-    script(nonce=nonce).
-          document.addEventListener('DOMContentLoaded', function() {      
-              //var token = sessionStorage.getItem('authToken');          
-          var newUrl = localStorage.getItem('newUrl');
-          console.log('newUrl: ', newUrl);
-              document.getElementById('newUrl').value= newUrl || '';
-              //document.getElementById('authToken').value = token || '';
-          });
-          
   .contentarea
-  | User name form generation
+  | User name form generation for website/App: #{urlOrApp}
   p#passwForm
   form(action='/genWebUn', id='formUserN', method='post') Please enter self user name or format for auto-creation of user name.
    br
@@ -82,7 +74,9 @@ html
      br
      button#auto(type='submit') Submit
      br
-     input#newUrl(type='hidden', name='newUrl')
+     input#urlOpt(type='hidden', name='urlOpt', value=`${uaOptions.URL}`)
+     input#appOpt(type='hidden', name='appOpt', value=`${uaOptions.App}`)
+     input#newUrl(type='hidden', name='newUrl', value=`${urlOrApp}`)
      input#authToken(type='hidden', name='token')
   br
   br

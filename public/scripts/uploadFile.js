@@ -1,9 +1,9 @@
 //Called from validLogin.pug
 function uploadFile() {
-    let db, versionNo;
+    let db, versionNo = 0;
     let dbName = 'webPwdDB';
     let dbStoreName = 'webDbStore1';
-    var request = indexedDB.open(dbName);//if not 1, then version change
+    /*var request = indexedDB.open(dbName);//if not 1, then version change
     request.onerror = (event) => {
         console.error("Database error:", event.target.error);
     };
@@ -15,39 +15,65 @@ function uploadFile() {
         versionNo = db.version + 1;
         console.log('Open db version no: ', db.version, ' done.');
         db.close();
-    };
+    };*/
     //versionNo += 1; will result in NaN because indexedDb.open is asynchronous and this line done before request.onsuccess
-    request = indexedDB.open(dbName, versionNo);
-    request.onsuccess = (event) => {
-        db = event.target.result;
-        console.log('Open db version no: ', versionNo, ' done.');
-        const message = document.getElementById('mess');
-        message.innerText = "Please select file from pop-up of your computer for importing web credential records to your browser database, due to loss of browser database.";
-        triggerImport(db, dbStoreName);
-    };
-    request.onerror = (event) => {
-        console.error("Database error:", event.target.error);
-    };
-    request.onupgradeneeded = (evt) => {
-        db = evt.target.result;
-        console.log('Database version: ', db.version);
-        const objStore = db.createObjectStore(
-            dbStoreName, { keyPath: 'id', autoIncrement: true });
-        //objStore.createIndex('rid', 'rid', { unique: true });
-        objStore.createIndex('name', 'name', { unique: false });
-        objStore.createIndex('url', 'url', { unique: false });
-        objStore.createIndex('pwd', 'pwd', { unique: false });
-        // Use transaction oncomplete to make sure the objectStore creation is
-        // finished before adding data into it.
-        objStore.transaction.oncomplete = (event) => {
-            console.log('Object store: ', dbStoreName, ' created.');
-        };
-        objStore.transaction.onerror = (evt) => {
-            console.error("request.onupgradeneeded error: ", evt.target.error);
-        };
-    };
-}
-    
+    const promise1 = checkDbStore(dbName);
+    const promise2 = 22;
+    Promise.all([promise1, promise2])
+        .then(() => {
+            const req = indexedDB.open(dbName, versionNo);
+            req.onsuccess = (evt) => {
+                db = evt.target.result;
+                console.log('Open db version no: ', versionNo, ' done.');
+                const message = document.getElementById('mess');
+                message.innerText = "Please select file from pop-up of your computer for importing web credential records to your browser database, due to loss of browser database.";
+                triggerImport(db, dbStoreName);
+            };
+            req.onerror = (evt) => {
+                console.error("Database error:", evt.target.error);
+            };
+            req.onupgradeneeded = (evt) => {
+                db = evt.target.result;
+                console.log('Database version: ', db.version);
+                const objStore = db.createObjectStore(
+                    dbStoreName, { keyPath: 'id', autoIncrement: true });
+                //objStore.createIndex('rid', 'rid', { unique: true });
+                objStore.createIndex('name', 'name', { unique: false });
+                objStore.createIndex('url', 'url', { unique: false });
+                objStore.createIndex('pwd', 'pwd', { unique: false });
+                // Use transaction oncomplete to make sure the objectStore creation is
+                // finished before adding data into it.
+                objStore.transaction.oncomplete = (event) => {
+                    console.log('Object store: ', dbStoreName, ' created.');
+                };
+                objStore.transaction.onerror = (evt) => {
+                    console.error("request.onupgradeneeded error: ", evt.target.error);
+                };
+            };
+        });
+    async function checkDbStore(dbName) {
+        const checkDb = await new Promise((resolve, reject) => {
+            var request = indexedDB.open(dbName);//if not 1, then version change
+            request.onerror = (event) => {
+                console.error("Database error:", event.target.error);
+            };
+            request.onblocked = () => {
+                console.error("Database connection is blocked. Close other tabs or processes using the database.");
+            };
+            request.onsuccess = (event) => {
+                db = event.target.result;
+                versionNo = db.version;
+                console.log('Open db version no: ', db.version, ' done.');
+                const hasStore = db.objectStoreNames.contains(dbStoreName);
+                if (!hasStore) {
+                    versionNo = versionNo + 1;
+                    console.log('versionNo if no store: ', versionNo);
+                }
+                db.close();
+                resolve(versionNo);
+            };
+        });
+    }
     function triggerImport(dbUpg, dbStoreName) {
         // Create and insert a file input element dynamically
         const fileInput = document.createElement("input");
@@ -100,7 +126,8 @@ function uploadFile() {
                 }
             };
             reader.readAsText(file);//Read the file as text
-            
+
         }
-        
+
     }
+}

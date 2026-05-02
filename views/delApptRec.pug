@@ -17,7 +17,7 @@ html
   head
     title To delete previous record of login credentials of an app
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
-    script(src='/scripts/readWebRec.js')
+    script(src='/scripts/readWebRec.js' nonce=nonce)
   body
     p The app that your login user-name and password to be deleted: #{apptObj.appt}
     p(data-url=apptObj.appt) List of user name and password of this app

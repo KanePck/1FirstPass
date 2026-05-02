@@ -1,3 +1,4 @@
+//Call from /genWebUn
 doctype html
 html
   nav.navbar.navbar-inverse
@@ -17,18 +18,25 @@ html
   head
     title
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
-    script(src='/scripts/getToken.js')
+    script(src='/scripts/genWebPw.js' nonce=nonce)
   body
     script(nonce=nonce).
           var usrName = localStorage.getItem('usrName');
           console.log('usrName: ', usrName);
           document.addEventListener('DOMContentLoaded', function() {
               document.getElementById('uName').value= usrName;
+              if (sessionStorage.getItem('authToken')) {
+                  document.getElementById('authToken').value = sessionStorage.getItem('authToken');
+                  //console.log('token: ', sessionStorage.getItem('authToken'));
+              } else {
+                  console.log('Error!, cannot read token from browser.');
+              }
           });
   | Password form generation
   p Web User name: #{unObj.webUn}
-  p For Url: #{unObj.url}
+  p For Url/App: #{unObj.url}
   p#passwForm
+  //Form action handled by genWebPw.js which preventing /genWebPw and fetching /genWebPw2 and /dashBoard instead.
   form(action='/genWebPw', id='formPassw', method='post') Please specify format of required password.
    br
    br
@@ -36,17 +44,17 @@ html
      select(name='webUserName')
        option(selected='selected', value=`${unObj.webUn}`) #{unObj.webUn}
    li
-     lable(for='self') Self provided password:
+     label(for='self') Self provided password:
      input#self(type='text', name='self')
      br
      br
-     button#self(type='submit') Submit
+     button#selfBtn(type='submit') Submit Password
      br
      p For auto-creation of password, please fill in below.
      br       
    li
      label(for='length') Length of password:
-     input#length(type='number', name='length')
+     input#length(type="range" min="8" max="64" value="16")
      br
      br
    li
@@ -81,11 +89,14 @@ html
      |No
      br
      br
-     button(type='submit') Submit
+     button#genBtn(type='submit') Generate Password
      br
      input(type='hidden', name='url', value=`${unObj.url}`)
      input#uName(type='hidden', name='usrName')
      input#authToken(type='hidden', name='token')
+     input#passwordResult(type="hidden")
+     input#urlOpt(type='hidden', name='urlOpt', value=`${uaOpts.URL}`)
+     input#appOpt(type='hidden', name='appOpt', value=`${uaOpts.App}`)
   br
   br
   footer

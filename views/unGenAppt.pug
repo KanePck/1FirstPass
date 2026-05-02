@@ -17,11 +17,11 @@ html
   head
     title
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
-    script(src='/scripts/getToken.js')
+    script(src='/scripts/getToken.js' nonce=nonce)
   body
     script(nonce=nonce).
           document.addEventListener('DOMContentLoaded', function() {      
-              //var token = localStorage.getItem('authToken');          
+              //var token = sessionStorage.getItem('authToken');          
           var newAppt = localStorage.getItem('newAppt');
           console.log('newAppt: ', newAppt);
               document.getElementById('newAppt').value= newAppt || '';

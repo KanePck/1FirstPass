@@ -1,4 +1,4 @@
-//Called from logPasswHdlr.js
+//Called from /retryLog
 doctype html
 html
   nav.navbar.navbar-inverse
@@ -16,6 +16,7 @@ html
 head
 Title User to retry a login password
 link(rel='stylesheet', href='/stylesheets/main.css')
+script(src='/scripts/handleLogin.js' nonce=nonce)
 body
   script(nonce=nonce).
         var sid=localStorage.getItem('sessionId');
@@ -25,20 +26,22 @@ body
         });
   .contentarea
   h1 User login password is to retry.
-  h2 You have remaining #{usrObj.remAttempt} attempts to login.
-  p#passw 
-        form(action='/logPasswHdlr', id='passw', method='post') #{usrObj.username}, please input valid password
+  h2 You have remaining #{remAttempt} attempts to login.
+  p 
+        form(action='/logPasswHdlr', id='loginForm', method='post')
                 br
-                input#name(checked='checked', name='username', type='radio', value=`${usrObj.username}`)
+                label(for='name') #{name}, please input valid password
+                input#name(type='hidden',  name='username', value=`${name}`)
                 br
                 br
                 label(for='passw') Password: (8-16 characters) 
                 br
-                input#passw(type='password' autofocus, name='password' required, minlength='8', maxlength='16', value='')
+                input#passw(type='password' autofocus, name='LoginPassword' required, minlength='8', maxlength='16', value='')
                 br
                 br
                 button(type='submit') Submit
                 input#sid(type='hidden', name='sessionId')
+                input#logCount(type='hidden', name='logCount', value=`${remAttempt}`)
   br
   br
   footer

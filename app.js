@@ -54,6 +54,7 @@ var otpSubmit = require('./routes/otpSubmit');
 var getWebPwd = require('./routes/getWebPwd');
 var sessionInit = require('./routes/sessionInit');
 var postLogin = require('./routes/postLogin');
+var dashBoard = require('./routes/dashBoard');
 var label = 1; //label of each user photo used in /saveImage
 var count = 1; // no of times user do face login used in /ffi
 var passwCount = 0; // no of times user do password login used in /logPasswHdlr
@@ -79,12 +80,33 @@ const mongoose = require("mongoose");
 mongoose.set("strictQuery", false);
 async function connectDb() {
     try {
+        await mongoose.connect(process.env.mongodbUri);
+        console.log('MongoDB connected');
+        // Since we 'await' above, the connection is live NOW.
+        // Run the migration immediately.
+        const result = await UserKeys.updateMany(
+            { schemaVersion: { $exists: false } },
+            { $set: { schemaVersion: 1 } }
+        );
+        if (result.modifiedCount > 0) {
+            console.log(`Database schema check complete. Migrated ${result.modifiedCount} legacy users.`);
+        } else {
+            console.log("Database schema check complete. All legacy users found and update schemaVersion to 1.");
+        }
+
+    } catch (err) {
+        console.error('MongoDB connection error:', err);
+    }
+}
+/*async function connectDb() {
+    try {
         await mongoose.connect(process.env.mongodbUri);//define in .env file in ExpressPwdNoMore folder
         console.log('MongoDB connected');
+        
     }   catch (err) {
         console.log(err);
     }
-}
+}*/
 async function userCreate(body) {
     try {
         const date = new Date();
@@ -135,6 +157,16 @@ app.use((req, res, next) => {
     const nonce = crypto.randomBytes(16).toString('base64');
     //console.log('nonce: ', nonce);
     res.locals.nonce = nonce;
+
+    //Set the Report-Only header for testing, will revise to final CSP later
+    res.setHeader("Content-Security-Policy-Report-Only",
+        `default-src 'self'; ` +
+        `script-src 'self' 'nonce-${nonce}'; ` +
+        `style-src 'self' 'unsafe-inline'; ` +
+        `connect-src 'self'; ` +
+        `img-src 'self' data:; ` +
+        `frame-ancestors 'none';`
+    );
     next();
 });
 //Implement Content Security Policy
@@ -226,6 +258,8 @@ app.use('/getWebPwd', getWebPwd);
 app.use('/sessionInit', sessionInit);
 app.use('/postLogin', postLogin);
 app.use('/unGenAppt', unGenAppt);
+app.use('/dashBoard', dashBoard);
+//app.use('/deleteEntry', deleteEntry);
 //To set up https environment which needed for localhost
 const PORT = process.env.PORT || 1337;
 const hostname = process.env.HOSTNAME || 'localhost';
@@ -464,7 +498,8 @@ app.post('/login', function (req, res) { //Called from index.pug
             if (face&&faceDb) {
                 res.render('photoLog.pug', { username: name });
             } else {
-                res.render('passwLog.pug', { username: name, nonce: res.locals.nonce });
+                const count = 3;
+                res.render('passwLog.pug', { username: name, nonce: res.locals.nonce, attempt: count });
             }
             
         } else {
@@ -496,12 +531,126 @@ app.post('/saveFaceLn', (req, res) => { //Called from scripts/capPhoto2.js
         res.json(responseData);
     });
 });
-app.post('/mpassHdlr', function (req, res) {
+app.post('/mpassHdlr2', async function (req, res) {
+    const { userName, photoOpt, securityPayload } = req.body;
+    let facePh = false;
+    var hashPassw;
+    if (photoOpt == 'photo') {
+        facePh = true;
+    }
+    if (!req.session.pwReset) {
+        console.log('req.session.pwReset: false');
+        //To update option of face photo
+        updDbFace();
+        const promise1 = userKeysCreate(userName, securityPayload);//To store User keys data in db
+        const promise2 = 22;
+        Promise.all([promise1, promise2])
+            .then(() => {
+                console.log('Promise.all (1+3) done');
+                if (facePh) {
+                    res.render('photoCap.pug', { username: usName });
+                    return;
+                }
+                res.render('supSuccess.pug');
+            })
+            .catch((error) => {
+                console.error('promise.all (1+3) error: ', error);
+            });
+    } else {
+        console.log('req.session.pwReset: true')
+        const promise3 = userKeysUpdate(usName, securityPayload);
+        const promise4 = 44;
+        console.log('userKeysUpdate call completed, continuing to Promise.all...');
+        Promise.all([promise3, promise4])
+            .then(() => {
+                console.log('Promise.all (1+4) done');
+                req.session.pwReset = false;
+                res.render('supSuccess.pug');
+            })
+            .catch((error) => {
+                console.error('promise.all (1+4) error: ', error);
+            });
+    }
+    //Some functions
+    async function updDbFace() {
+        try {
+            console.log('updDbFace is in.');
+            const filter = { userName: userName };
+            const update = { facePhoto: facePh };
+            const doc = await Users.findOneAndUpdate(filter, update, { new: true });
+            console.log('doc: ', doc.userName, ' ', doc.facePhoto);
+            //if (res.acknowledged) {
+            //console.log('Update face photo status done.');
+            //}
+            //console.log(passw1, passw2, facePh);
+        } catch (error) {
+            if (error.name === 'MongoError') {
+                console.error('Database Error:', error.message);
+            } else {
+                console.error('Unexpected Error:', error.message || error);
+            }
+            //console.error('Error updDbf:', error);
+        }
+
+    }
+    async function userKeysCreate(usName, secPayload) {
+        try {
+            //UserDb define at line 40
+            const pubKey = secPayload.publicKey;
+            const wDek = secPayload.wrappedDek;
+            const mastBox = secPayload.masterBox;
+            const recovBox = secPayload.recoveryBox;
+            const u0 = new UserKeys({ userName: usName, wrappedDek: wDek, publicKey: pubKey, masterBox: mastBox, recoveryBox: recovBox });
+            await u0.save();
+            console.log(`User: ${usName} and encrypted keys added to UserKeys Database.`);
+
+        } catch (err) {
+            console.log(err);
+        }
+
+    }
+    async function userKeysUpdate(usName, secPayload) {
+        console.log('--- ENTERING userKeysUpdate ---');
+        console.log('Received usName:', usName);
+        const mastBox = secPayload.masterBox;
+        try {
+            console.log('userKeysUpdate is in. Target User:', usName); // Log the input
+            const filter = { userName: usName };
+            const update = { masterBox: mastBox };
+            // 1. Log the document BEFORE the update
+            const originalDoc = await UserKeys.findOne(filter);
+            if (originalDoc) {
+                console.log('Original userName:', originalDoc.masterBox ? 'FOUND' : 'NOT FOUND');
+            } else {
+                console.log('Original document NOT FOUND for filter.');
+            }
+            const doc = await UserKeys.findOneAndUpdate(filter, update, { new: true });
+            if (!doc) {
+                console.warn(`User document not found for userName: ${usName}. Filter failed.`);
+                return null;
+            }
+            // Check if the update succeeded by comparing old and new values
+            if (originalDoc && doc.masterBox !== originalDoc.masterBox) {
+                console.log('? SUCCESS: hashPassw value has clearly changed.');
+            } else if (originalDoc && doc.masterBox === originalDoc.masterBox) {
+                console.log('?? WARNING: hashPassw appears unchanged after update attempt.');
+            } else {
+                // This covers the case where the document was not found or was just created (upsert)
+                console.log('Note: Update success cannot be verified via comparison (new document or filter failed).');
+            }
+        } catch (error) {
+            // Log the full error to get more context than just error.message
+            console.error('Error during userKeysUpdate:', error);
+            throw error; // Crucially, re-throw the error so the caller can handle the failure
+        }
+    }
+});
+/*app.post('/mpassHdlr', function (req, res) {
     const { pbkdf2, generateKeyPairSync } = require('crypto');
     const { Buffer } = require('buffer');
     //import Vault from 'vault-storage/vault';
-    const passw1 = req.body.password;
-    const passw2 = req.body.cPassw;
+    let passw1 = req.body.password;
+    let passw2 = req.body.cPassw;
     const usName = req.body.usrName;
     console.log('getUsername done.');
     const regExp = /[A - Za - z0 - 9]/;
@@ -509,6 +658,10 @@ app.post('/mpassHdlr', function (req, res) {
     let facePh = false;
     let faceObj = { face: facePh };
     var encryptPrvKey, pubKey;
+    const iterations = 500000;
+    const keyBytes = 64; // Total bytes derived
+    const salt2Bytes = 16;
+    const digest = 'sha512';
     if (req.body.option == 'photo') {
         facePh = true;
     }
@@ -599,7 +752,10 @@ app.post('/mpassHdlr', function (req, res) {
         .catch((error) => {
             console.error('promise.all (1+2) error: ', error);
         });
-
+    //Clean up memory
+    passw1 = null;
+    passw2 = null;
+    drvKey = null;
     //Some Functions
     async function updDbFace() {
         try {
@@ -608,10 +764,10 @@ app.post('/mpassHdlr', function (req, res) {
             const update = { facePhoto: facePh };
             const doc = await Users.findOneAndUpdate(filter, update, { new: true });
             console.log('doc: ', doc.userName, ' ', doc.facePhoto);
-            /*if (res.acknowledged) {
-                console.log('Update face photo status done.');
-            }*/
-            console.log(passw1, passw2, facePh);
+            //if (res.acknowledged) {
+                //console.log('Update face photo status done.');
+            //}
+            //console.log(passw1, passw2, facePh);
         } catch (error) {
             if (error.name === 'MongoError') {
                 console.error('Database Error:', error.message);
@@ -629,12 +785,14 @@ app.post('/mpassHdlr', function (req, res) {
         console.log('salt:', salt);
         hashPassw = await bcrypt.hash(password, salt);
         console.log('salt: ', salt, 'hash: ', hashPassw);
-        await pbkdf2(password, salt, 10000, 64, 'sha512', (err, derivedKey) => {
+        const salt2 = crypto.randomBytes(salt2Bytes);
+        await pbkdf2(password, salt2, iterations, keyBytes, digest, (err, derivedKey) => {
             if (err) throw err;
             console.log('Derived Key: ', derivedKey.toString('hex'));
             drvKey = derivedKey;
             //genKeyPair(derivedKey);
         });
+        password = null;
         return hashPassw;
     }
 
@@ -684,7 +842,221 @@ app.post('/mpassHdlr', function (req, res) {
             throw error; // Crucially, re-throw the error so the caller can handle the failure
         }
     }
+});*/
+app.post('/loginCheck', async (req, res) => {
+    try {
+        const { username } = req.body;
+        const user = await UserKeys.findOne({ userName: username }).lean();
+        //Use .lean() to return a plain JavaScript object instead of a heavy Mongoose document.
+        if (!user) {
+            // To prevent username enumeration, return a generic error or a 'fake' box
+            console.log('This user not found: ', username);
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Logic based on the schemaVersion we migrated earlier
+        if (user.schemaVersion === 1) {
+            // LEGACY USER: They only have a password hash
+            return res.json({
+                version: 1,
+                message: "Security upgrade required"
+            });
+        } else {
+            // OPTION B USER: Send them their lockboxes
+            return res.json({
+                version: 2,
+                masterBox: {
+                    encryptedKey: user.masterBox.encryptedKey,
+                    salt: user.masterBox.salt,
+                    iv: user.masterBox.iv
+                },
+                wrappedDek: user.wrappedDek,
+                publicKey: user.publicKey
+            });
+        }
+    } catch (err) {
+        res.status(500).json({ error: "Server error" });
+    }
 });
+app.post('/verifyVer1Passw', async (req, res) => {
+    const { username, password } = req.body;
+    const user = await UserKeys.findOne({ userName: username });
+    if (!user || user.schemaVersion !== 1) {
+        return res.status(400).send("Invalid request");
+    }
+    // Compare the plain password from browser with the stored Bcrypt hash
+    const match = await bcrypt.compare(password, user.hashPassw);
+    if (match) {
+        res.status(200).send("Verified");
+    } else {
+        console.log('Legacy password verification failed.');
+        res.status(401).send("Unauthorized");
+    }
+});
+app.post('/completeMigration', async (req, res) => {
+    const { username, securityPayload } = req.body;
+
+    await UserKeys.findOneAndUpdate(
+        { userName: username },
+        {
+            $set: {
+                masterBox: securityPayload.masterBox,
+                recoveryBox: securityPayload.recoveryBox,
+                wrappedDek: securityPayload.wrappedDEK,
+                publicKey: securityPayload.publicKey,
+                schemaVersion: 2 // User is now fully Option B
+            },
+            //$unset: { hashPassw: "", encPrvKey: "" } // Delete the old hash entirely!
+        }
+    );
+
+    res.sendStatus(200);
+});
+app.get('/servLoginHdlr', function (req, res) {
+    const name = req.query.name;
+    console.log('name: ', name);
+    var usrInfo, usrId, maskUsrEmPh, usrEmPh, email, mPhone, phoneStr, maskEm, maskPh;
+    const promise1 = findUsrId(name);//this function obtain usrId, email, phone
+    const promise2 = 22;
+    Promise.all([promise1, promise2]) //promise.all-2
+        .then(([usrInfo]) => {
+            console.log('Promise done, id: ', usrInfo.id, 'email: ', usrInfo.email, 'phone: ', usrInfo.phone);
+            const usrData = { 'id': usrInfo.id, 'name': name };
+            maskEm = maskEmail(usrInfo.email);
+            phoneStr = '+' + usrInfo.phone.toString();
+            maskPh = maskPhone(phoneStr);
+            maskUsrEmPh = { 'username': name, 'email': maskEm, 'phone': maskPh };
+            const authTok = sess.sessLogin(usrData);//see session.js-authTok life is 12 hours
+            usrEmPh = { 'username': name, 'email': usrInfo.email, 'phone': phoneStr };
+            console.log('usrEmPh email: ', usrEmPh.email, 'usrInfo email', usrInfo.email);
+            req.session.usrId = usrInfo.id;
+            req.session.usrName = name;
+            req.session.authToken = authTok;
+            req.session.login = true;
+            //validLogin = true; done in sessLocStore.js
+            //sessData={'userId': usrId, 'userName': name, 'loginValid': req.session.login};
+            //if (name == 'Kane') {
+            //passw = '';
+            res.render('mfa.pug', { authTok, usrInfo, usrEmPh, maskUsrEmPh, nonce: res.locals.nonce });
+        })
+        .catch((error) => {
+            console.error('promise.all-1,2 in /servLoginHdlr error: ', error);
+        });
+    
+});
+async function findUsrId(name) {
+    const query = Users.findOne({ userName: name });
+    const doc = await query.exec();
+    const usrId = doc.id;
+    const email = doc.email;
+    const mPhone = doc.mPhone;
+    //phoneStr = '+' + mPhone.toString();
+    //console.log('id: ', usrId, 'email: ', email, 'phone: ', mPhone);
+    const usrInfo = { 'name': name, 'id': usrId, 'email': email, 'phone': mPhone };
+    //console.log('usrData id: ', usrData2.id, 'email: ', usrData2.email, 'phone: ', usrData2.phone);
+    return usrInfo;
+}
+//maskEmail("kane.dev@domain.com") Output: ka *** ev@domain.com/
+function maskEmail(email) {
+    console.log('mask email: ', email);
+    const [user, domain] = email.split("@");
+    const visibleStart = user.slice(0, 1);
+    const visibleEnd = user.slice(-2);
+    return `${visibleStart}******${visibleEnd}@${domain}`;
+}
+//maskPhone("+66-891234123") Output: +66****123
+function maskPhone(phone) {
+    const visibleStart = phone.slice(0, 2); // e.g., "+66-89"
+    const visibleEnd = phone.slice(-3);    // e.g., "123"
+    return `${visibleStart}******${visibleEnd}`;
+}
+app.get('/retryLog', function (req, res) { //Call from scripts/handleLogin.js
+    // req.query contains the decoded values automatically!
+    const name = req.query.name;
+    const remAttempt = req.query.remAttempt;
+    console.log(`User ${name} has ${remAttempt} tries left.`);
+    res.render('rePasswLog.pug', { name, remAttempt });
+});
+app.get('/fail3LogHdlr', function (req, res) {//Called from scripts/handleLogin.js
+    const name = req.query.name;
+    console.log('name: ', name);
+    var maskUsrEmPh, usrEmPh, phoneStr, maskEm, maskPh;
+    const promise1 = findUsrId(name);//this function obtain usrId, email, phone
+    const promise2 = 22;
+    Promise.all([promise1, promise2]) //promise.all-2
+            .then(([usrInfo, prom2]) => {
+                console.log('Promise done, id: ', usrInfo.id, 'email: ', usrInfo.email, 'phone: ', usrInfo.phone);
+                const usrData = { 'id': usrInfo.id, 'name': name };
+                phoneStr = '+' + usrInfo.phone.toString();
+                maskEm = maskEmail(usrInfo.email);
+                maskPh = maskPhone(phoneStr);
+                maskUsrEmPh = { 'username': name, 'email': maskEm, 'phone': maskPh };
+                const authTok = sess.sessLogin(usrData);//see session.js-authTok life is 12 hours
+                usrEmPh = { 'username': name, 'email': usrInfo.email, 'phone': phoneStr };
+                console.log('fail3LogHdlr Token: ', authTok);
+                req.session.usrId = usrInfo.id;
+                req.session.usrName = name;
+                req.session.authToken = authTok;
+                req.session.login = true;
+
+                res.render('fail3logPw.pug', { authTok, usrInfo, usrEmPh, maskUsrEmPh, nonce: res.locals.nonce });
+            })
+            .catch((error) => {
+                console.error('promise.all-1,2 error: ', error);
+            });
+    /*} catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }*/
+    //maskEmail("kane.dev@domain.com") Output: ka *** ev@domain.com/
+    /*function maskEmail(email) {
+        const [user, domain] = email.split("@");
+        const visibleStart = user.slice(0, 1);
+        const visibleEnd = user.slice(-2);
+        return `${visibleStart}******${visibleEnd}@${domain}`;
+    }
+    //maskPhone("+66-891234123") Output: +66****123
+    function maskPhone(phone) {
+        const visibleStart = phone.slice(0, 2); // e.g., "+66-89"
+        const visibleEnd = phone.slice(-3);    // e.g., "123"
+        return `${visibleStart}******${visibleEnd}`;
+    }*/
+});
+app.post('/recovKeyHdlr', async function (req, res) {
+    try {
+        const { username } = req.body;
+        const user = await UserKeys.findOne({ userName: username });
+
+        if (!user) {
+            // To prevent username enumeration, return a generic error or a 'fake' box
+            console.log('This user not found: ', username);
+            return res.status(404).json({ error: "User not found" });
+        }
+        return res.json({
+               recoveryBox: user.recoveryBox,
+               wrappedDek: user.wrappedDek,
+               publicKey: user.publicKey
+            });
+        
+    } catch (err) {
+        res.status(500).json({ error: "Server error" });
+    }
+});
+app.get('/vaultRecovKey', async function (req, res) {
+    const usrId = req.query.id;
+    try {
+        const userVault = await vaultData(usrId);// usrId was set to req.session in app.get('/servLoginHdlr)
+        console.log('Entries found:', userVault.length);
+        const pattern = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+        res.render('dashBoardRck.pug', { vault: userVault, pattern, nonce: res.locals.nonce });
+    } catch (error) {
+        res.status(400).send("Error loading vault: ", error);
+    }
+    async function vaultData(usrId) {
+        //This returns an Array of all documents matching that userId.
+        return await UserWebs.find({ userId: usrId }).exec();
+    }
+})
 app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
     const name = req.body.username;
     const sessId = req.body.sessionId;
@@ -693,21 +1065,33 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
     //var validLogin = false;
     passwCount += 1; //it is declared=0 initially
     var remCount = 3 - passwCount;
-    const passw = req.body.loginPassword;
+    let passw = req.body.loginPassword; //Cannot be const variable as it will be assinged null later.
     const promise1 = findHashPassw(name);
     const promise2 = 22;
     let usrObj = { 'username': name, 'remAttempt': remCount }; //JSON syntax
     var usrInfo, usrId, maskUsrEmPh, usrEmPh, email, mPhone, phoneStr, maskEm, maskPh, browser, os, cpu;
+    //Encrytion config parameters
+    const algorth = 'aes-256-gcm';
+    const keyBytes = 32;
+    const saltBytes = 16;
+    const ivBytes = 12;
+    const iterations = 600000;
+    const digest = 'sha256';
+    const validCheckString = "VAULT_MASTER_PASSWORD_IS_CORRECT";
+    var checkArtifact;
+
     Promise.all([promise1, promise2]) //promise.all-1
         .then(() => {
             bcrypt.compare(passw, hashP, function (err, result) {
-                const promise3 = findUsrId(name);//this function obtain usrId, email, phone
-                const promise4 = 44; // getUsrAgent(name) not needed here
+                //const promise3 = findUsrId(name);//this function obtain usrId, email, phone
+                //const promise4 = genArtifact(passw); // getUsrAgent(name) not needed here
                 if (result == true) {
+                    const promise3 = findUsrId(name);//this function obtain usrId, email, phone
+                    const promise4 = genArtifact(passw); // getUsrAgent(name) not needed here
                     Promise.all([promise3, promise4]) //promise.all-2
-                        .then(([usrInfo, prom4]) => {
-                            console.log('Promise done, id: ', usrInfo.id , 'email: ', usrInfo.email, 'phone: ', usrInfo.phone);
-                            usrData = { 'id': usrInfo.id, 'name': name};
+                        .then(([usrInfo, checkArtifact]) => {
+                            console.log('Promise done, id: ', usrInfo.id, 'email: ', usrInfo.email, 'phone: ', usrInfo.phone);
+                            usrData = { 'id': usrInfo.id, 'name': name };
                             maskEm = maskEmail(email);//email and phoneStr obtained from findUsrId(name)
                             maskPh = maskPhone(phoneStr);
                             maskUsrEmPh = { 'username': name, 'email': maskEm, 'phone': maskPh };
@@ -721,22 +1105,21 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
                             //validLogin = true; done in sessLocStore.js
                             //sessData={'userId': usrId, 'userName': name, 'loginValid': req.session.login};
                             //if (name == 'Kane') {
-                            res.render('mfa.pug', { authTok, usrInfo, usrEmPh, maskUsrEmPh });
-                            /*} else {
-                                res.render('validLogin.pug', { authTok, usrData, nonce: res.locals.nonce });
-                            }*/
-                                                        
+                            passw = '';
+                            res.render('mfa.pug', { authTok, usrInfo, usrEmPh, maskUsrEmPh, checkArtifact, nonce: res.locals.nonce });
                         })
                         .catch((error) => {
-                            console.error('promise.all-2 error: ', error);
+                            console.error('promise.all-3,4 error: ', error);
                         });
                 } else {
                     if (passwCount < 3) {
                         //console.log('remaing count: ', remCount, 'name: ', name);
                         res.render('rePasswLog.pug', { usrObj, nonce: res.locals.nonce });
                     } else {
-                        Promise.all([promise3, promise4]) //promise.all-2
-                            .then(([usrInfo, prom4]) => {
+                        const promise3 = findUsrId(name);//this function obtain usrId, email, phone
+                        const promise5 = 55;
+                        Promise.all([promise3, promise5]) //promise.all-2
+                            .then(([usrInfo, prom5]) => {
                                 console.log('Promise done, id: ', usrInfo.id, 'email: ', usrInfo.email, 'phone: ', usrInfo.phone);
                                 usrData = { 'id': usrInfo.id, 'name': name };
                                 maskEm = maskEmail(email);//email and phoneStr obtained from findUsrId(name)
@@ -782,6 +1165,44 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
         //console.log('usrData id: ', usrData2.id, 'email: ', usrData2.email, 'phone: ', usrData2.phone);
         return usrInfo;
     }
+    async function genArtifact(password) {
+        // 1. Convert to Buffer for security
+        const mpBuffer = Buffer.from(password, 'utf8');
+        const salt = crypto.randomBytes(saltBytes);
+        const iv = crypto.randomBytes(ivBytes);
+
+        // 2. Derive the 32-byte Key
+        // We use the async version to keep the Express server responsive
+        const key = await new Promise((resolve, reject) => {
+            crypto.pbkdf2(mpBuffer, salt, iterations, keyBytes, digest, (err, derivedKey) => {
+                if (err) reject(err);
+                resolve(derivedKey);
+            });
+        });
+
+        // 3. WIPE the master password from memory immediately
+        mpBuffer.fill(0);
+        password = null;
+        // 4. Encrypt the validation string
+        const cipher = crypto.createCipheriv(algorth, key, iv);
+        let encrypted = cipher.update(validCheckString, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+        const authTag = cipher.getAuthTag().toString('hex');
+
+        // 5. WIPE the derived key from memory
+        key.fill(0);
+
+        // 6. Return the artifact to be sent to the browser
+        checkArtifact = {
+            'id': 'currentCheck',
+            'salt': salt.toString('hex'),
+            'iv': iv.toString('hex'),
+            'tag': authTag,
+            'content': encrypted
+        };
+        return checkArtifact;
+    }
+    
     //maskEmail("kane.dev@domain.com") Output: ka *** ev@domain.com/
     function maskEmail(email) {
         const [user, domain] = email.split("@");
@@ -795,7 +1216,6 @@ app.post('/logPasswHdlr', function (req, res) { //Called from passwLog.pug
         const visibleEnd = phone.slice(-3);    // e.g., "123"
         return `${visibleStart}******${visibleEnd}`;
     }
-
     async function getUsrAgent(name) { //to find user-agent info
         try {
             const query = UserWebs.findOne({ userName: name });
@@ -851,7 +1271,7 @@ app.post('/pwReset', (req, res) => {
         const usrInfo = { 'name': usrName, 'id': usrId, 'email': eml, 'phone': phn };
         const usrEmPh = { 'username': usrName, 'email': eml, 'phone': phn };
         const maskUsrEmPh = { 'username': usrName, 'email': maskEm, 'phone': maskPh };
-        res.render('mfa.pug', { authTok, usrInfo, usrEmPh, maskUsrEmPh });
+        res.render('mfaPwRe.pug', { authTok, usrInfo, usrEmPh, maskUsrEmPh });
     }
 });    
 //Call from mfa.pug
@@ -970,7 +1390,7 @@ app.post('/reqNewOtp', (req, res) => {
     const maskEml = maskEmail(eml);
     const maskPhn = maskPhone(phn);
     const maskUsrEmPh = { 'email': maskEml, 'phone': maskPhn };
-    res.render('mfa.pug', { authTok, usrInfo, usrEmPh, maskUsrEmPh });
+    res.render('mfaNewOtp.pug', { authTok, usrInfo, usrEmPh, maskUsrEmPh });
     function maskEmail(email) {
         const [user, domain] = email.split("@");
         const visibleStart = user.slice(0, 1);
@@ -1019,6 +1439,7 @@ app.post('/otpVerify', (req, res) => {
                 if (otpKeyin === storedOtp) {
                     redisClient.del(key);
                     console.log('OTP verified and deleted successfully!');
+                    req.session.usrId = usrId;
                     if (!req.session.pwReset) {
                         console.log('req.session.pwReset: false');
                         res.render('validLogin.pug', { authTok, usrData, nonce: res.locals.nonce });
@@ -1083,7 +1504,16 @@ app.post('/webAccess', function (req, res) { //Called from validLogin.pug
         res.render('newUrl.pug', {urlObj});
         
     } else if (oldNew == 'old') {
-        res.render('oldUrl.pug', { appleObj });
+        res.render('oldUrl.pug', { appleObj });// Old version 1.0
+        /*New Version 2.0 below
+        const userVault = vaultData(req.session.usrId);// usrId was set to req.session in app.get('/servLoginHdlr)
+        console.log('encryptedWebPw: ', userVault.encryptedWebPw);
+        res.render('dashBoard.pug', { vault: userVault, nonce: res.locals.nonce });
+        async function vaultData(usrId) {
+            const query = UserWebs.find({ userId: usrId });
+            const doc = await query.exec();
+            return doc;
+        }*/
         
     } else {
         // Handle other cases or provide an appropriate response
@@ -1093,6 +1523,113 @@ app.post('/webAccess', function (req, res) { //Called from validLogin.pug
         const parser = new UAParser();
         const result = parser.getResult();
         return result.device.vendor === "Apple" || /iPhone|iPad|Mac/.test(result.device.model) || result.os.name === "Mac OS";
+    }
+})
+app.post('/webAccess2', async function (req, res) { //Called from validLogin.pug
+    var urlOrApp;
+    var apple = 'no';
+    //To obtain userAgent - browser, os, cpu, etc
+    const userAgent = req.headers['user-agent'];
+    //var browserUse, os, cpu, device, engine;
+    // Initialize the parser with the user agent string
+    if (userAgent) {
+        let parser = new uaParser();
+        parser.setUA(userAgent);
+        let result = parser.getResult();
+        if (result.device.vendor === "Apple" ||
+            /iPhone|iPad|Mac/.test(result.device.model) ||
+            result.os.name === "Mac OS") {
+            apple = 'yes';
+        }
+
+    } else {
+        console.log('User-Agent header is missing');
+    }
+    console.log('Apple: ', apple)
+    var appleObj = { 'isApple': apple };
+    let urlOpt = '';
+    let appOpt = '';
+    console.log('appleObj before render: ', appleObj.isApple);
+    var oldNew = req.body.oldNew;
+    console.log("oldNew value: ", oldNew);
+    if (oldNew == 'newUrl') {
+        urlOpt = 'yes';
+        appOpt = 'no';
+    } else if (oldNew == 'newApp') {
+        appOpt = 'yes';
+        urlOpt = 'no';
+    }
+    const uaOptions = {
+        URL:  urlOpt,
+        App:  appOpt }
+    if (oldNew == 'newUrl') {
+        urlOrApp = req.body.newUrl;
+        urlObj = { url: urlOrApp };//urlObj is global var
+        let webUn = '';
+        let webPw = '';
+        data.setDataObj(urlOrApp, webUn, webPw);
+        if (urlOrApp !== '') {
+            res.render('usernameGen.pug', { urlOrApp, uaOptions });
+        } else {
+            console.log('Url input empty!');
+            res.render('err.pug');
+        }
+    } else if (oldNew == 'newApp') {
+        urlOrApp = req.body.newApp;
+        if (urlOrApp !== '') {
+            res.render('usernameGen.pug', { urlOrApp, uaOptions });
+        } else {
+            console.log('App input empty!');
+            res.render('err.pug');
+        }
+    
+    } else if (oldNew == 'old') {
+        try {
+            const userVault = await vaultData(req.session.usrId);// usrId was set to req.session in app.get('/servLoginHdlr)
+            console.log('Entries found:', userVault.length);
+            const pattern = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+            res.render('dashBoard.pug', { vault: userVault, pattern, nonce: res.locals.nonce });
+        } catch (error) {
+            res.status(400).send("Error loading vault: ", error);
+        }
+    
+    } else {
+        // Handle other cases or provide an appropriate response
+        res.status(400).json({ error: 'Invalid value for oldNew' });
+    }
+    async function vaultData(usrId) {
+        //This returns an Array of all documents matching that userId.
+        return await UserWebs.find({ userId: usrId }).exec();
+    }
+    function isAppleDevice() {
+        const parser = new UAParser();
+        const result = parser.getResult();
+        return result.device.vendor === "Apple" || /iPhone|iPad|Mac/.test(result.device.model) || result.os.name === "Mac OS";
+    }
+})
+app.get('/deleteEntry', async function (req, res) { 
+    const userId = req.query.usrId;
+    const itemId = req.query.itemId;
+    try {
+        const userVault = await vaultDataDel(itemId);// usrId was set to req.session in app.get('/servLoginHdlr)
+        if (userVault) {
+            console.log('Entries found:', userVault.length);
+            res.render('dashBoard.pug', { vault: userVault, nonce: res.locals.nonce });
+        } else {
+            // If deletion failed or returned nothing, send an error or the current state
+            res.status(404).send("Deletion failed or item not found.");
+        }
+    } catch (error) {
+        res.status(400).send(`Error deletion: ${error}`);//send() function can only send text.
+    }
+    async function vaultDataDel(id) {
+        const res = await UserWebs.deleteOne({ _id: id }).exec();
+        if (res.deletedCount === 1) {
+            return await UserWebs.find({ userId: userId }).exec();
+        } else {
+            console.error('No document matched the provided ID.');
+            return null;
+        }
     }
 })
 app.post('/appAccess', function (req, res) { //Called from validLogin.pug
@@ -1141,6 +1678,14 @@ app.post('/appAccess', function (req, res) { //Called from validLogin.pug
         return result.device.vendor === "Apple" || /iPhone|iPad|Mac/.test(result.device.model) || result.os.name === "Mac OS";
     }
 })
+app.get('/validLogin', function (req, res) {
+    //req.session.usrId, req.session.usrName, req.session.authToken defined in /servLoginHdlr
+    const userId = req.session.usrId;
+    const userName = req.session.usrName;
+    const usrData = { id: userId , username: userName  };
+    const authTok = req.session.authToken;
+    res.render('validLogin.pug', {usrData, authTok, nonce: res.locals.nonce});
+})
 app.get('/delWebRec', function (req, res) {
     res.render('delWebRec.pug', {urlObj});
 })
@@ -1152,6 +1697,89 @@ app.get('/delApptRec', function (req, res) {
 })
 app.get('/unGenAppt', function (req, res) {
     res.render('unGenAppt.pug', { nonce: res.locals.nonce });
+})
+app.get('/dashBoard', async function (req, res) {
+    //Set headers to disble caching, and prevent the browser from saving sensitive Pug-rendered HTML to the disk (cache)
+    res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    });
+    const userId = req.session.usrId;
+    const userVault = await vaultData(userId);// usrId was set to req.session in app.get('/servLoginHdlr)
+    const pattern = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    res.render('dashBoard.pug', { vault: userVault, pattern, nonce: res.locals.nonce });
+    async function vaultData(usrId) {
+        return await UserWebs.find({ userId: usrId }).exec();
+        /*const query = UserWebs.find({ userId: usrId });
+        const doc = await query.exec();
+        return doc;*/
+    }
+})
+app.post('/genWebPw2', async function (req, res) {
+    const webCredPayLoad = req.body.payload; //web credentials ie, username, web user name, url, encrypted keys
+    const authTok = req.body.token;
+    const userId = req.session.usrId; //req.session.usrId updated in /servLoginHdlr
+    var result = sess.sessTokenVrfy(authTok);
+    if (result.decoded) {
+        console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
+        try {
+            await userWebCreate(webCredPayLoad, userId);
+            res.status(201).send("User vault is securely saved.");
+        } catch (err) {
+            console.error("Validation Error:", err.message);
+            res.status(400).send("Failed to save: " + err.message);
+        }
+    } else if (result.error) {
+        if (result.error.name === 'TokenExpiredError') {
+            console.log('Token has expired');
+            alert('Your authorization to proceed fails, please login again.');
+            res.sendStatus(400);
+        } else if (result.error.name === 'JsonWebTokenError') {
+            console.log('Token is invalid');
+            alert('Your authorization to proceed fails, please relogin.');
+            res.sendStatus(400);
+        } else {
+            console.log('Token verification error:', result.error.message);
+            alert('Your authorization to proceed fails, please relogin.');
+            res.sendStatus(400);
+        }
+    }
+      
+    //Create web credential database
+    async function userWebCreate(payLoad, usId) {
+        const usName = payLoad.userName;
+        const wUsName = payLoad.webUserName;
+        let finalUrl = payLoad.url;
+        let urlNotApp = payLoad.urlOpt;
+        if (urlNotApp == 'yes') {
+            if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+                finalUrl = 'https://' + finalUrl;
+            }
+        }
+        const encrypted = payLoad.encryptedData;
+        const wDek = payLoad.wrappedDek;
+        const iv = payLoad.iv;
+        try {
+            //UserWebs define at userWeb.js
+            const vaultIn = new UserWebs({
+                userId: usId,
+                userName: usName,
+                webUserName: wUsName,
+                webUrl: finalUrl,
+                encryptedWebPw: encrypted,
+                wrappedDek: wDek,
+                iv: iv
+            });
+            await vaultIn.save();
+            console.log(`User: ${usName}, web credentials, and encrypted keys added to UserWebs`);
+
+        } catch (err) {
+            console.error("Database Save Error:", err);
+            throw err;
+        }
+
+    }
 })
 app.post('/genWebPw', function (req, res) {
     console.log('reqBody: ', req.body, 'reqSelf: ', req.body.self);
@@ -1194,6 +1822,12 @@ app.post('/genWebPw', function (req, res) {
     const authTok = req.body.token;
     const message = 'Your authorization to proceed fails, please login again.';
     var result = sess.sessTokenVrfy(authTok);
+    //Set headers to disble caching, and prevent the browser from saving sensitive Pug-rendered HTML to the disk (cache)
+    res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    });
     if (result.decoded) {
         console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
         console.log('url: ', pwObj.url, ', webUserName:', webUserName, ', password: ', password);
@@ -1371,6 +2005,9 @@ app.post('/genWebUn', function (req, res) {
         })
     }
     const newUrl = req.body.newUrl;
+    const urlOpt = req.body.urlOpt;
+    const appOpt = req.body.appOpt;
+    const uaOpts = { URL: urlOpt, App: appOpt };
     /*let obj = data.getDataObj();
     if (urlObj.url === obj.url) { //urlObj is global variable and assigned value in /webAccess 
         data.setDataObj(obj.url, webUserName, obj.pwd);
@@ -1385,7 +2022,7 @@ app.post('/genWebUn', function (req, res) {
     if (result.decoded) {
         console.log('Token is valid:', result.decoded); // Proceed with using the decoded user data 
         console.log('User Name: ', webUserName, ', url: ', unObj.url, ', authToken: ', authTok);
-        res.render('pwGen.pug', { unObj, nonce: res.locals.nonce });//Next go to generating password page
+        res.render('pwGen.pug', { unObj, uaOpts, nonce: res.locals.nonce });//Next go to generating password page
 
     } else if (result.error) {
         if (result.error.name === 'TokenExpiredError')

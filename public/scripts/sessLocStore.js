@@ -1,4 +1,4 @@
-//To store session id to local storage
+//To store session id to session/local storage
 document.addEventListener('DOMContentLoaded', () => {
     console.log('in sessLocStore');
     const h1Element = document.querySelector('h1[data-uid]');
@@ -8,10 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const divElement = document.querySelector('div[data-auth]');
     const authTok = divElement.getAttribute('data-auth');
     var login = true;
-    localStorage.setItem('usrId', usrid);
+    sessionStorage.setItem('usrId', usrid);
+    sessionStorage.setItem('authToken', authTok);
     localStorage.setItem('usrName', usrname);
-    localStorage.setItem('authToken', authTok);
     localStorage.setItem('login', login);
-    console.log('user Id: ', localStorage.getItem('usrId'));
-    console.log('authTok: ', localStorage.getItem('authToken'));
+    console.log('user name: ', localStorage.getItem('usrName'));
+    //console.log('authTok: ', sessionStorage.getItem('authToken'));
 })

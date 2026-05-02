@@ -15,11 +15,11 @@ html
     head
         title MFA/OTP submission
         link(rel='stylesheet', href='/stylesheets/otpForm.css')
-        script(src='/scripts/otpForm.js')
+        script(src='/scripts/otpForm.js' nonce=nonce)
     body
         h1 Please enter OTP
         p 
-        | Time remaining for sending the OTP :
+        | Time remaining for submitting the OTP :
         span#otpTimer 05:00
         form#otpForm(action='/otpVerify', method='post', class ='otpContainer')
          ul

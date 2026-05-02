@@ -1,0 +1,45 @@
+doctype html
+html
+    nav.navbar.navbar-inverse
+    .container-fluid
+      .navbar-header
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
+              a(href='/') Home
+          colspan.nav
+              a(href='/aboutUs') About us   
+          colspan.nav
+              a(href='/contactUs') Contact us
+    head
+        title Multi Factor Authentication (MFA)
+        link(rel='stylesheet', href='/stylesheets/main.css')
+    body
+        h1 Verify Your Identity
+        form(action='/mfa', method='post')
+           p Authentication method
+           input(type='radio', name='authMeth', value='email', checked)
+           | Send an OTP code to : #{maskUsrEmPh.email}
+           br
+           input(type='radio', name='authMeth', value='phone')
+           | (Not available yet) Send a SMS code to phone : #{maskUsrEmPh.phone}
+           br
+           br
+           button(type='submit') Send code
+           input#mail(type = 'hidden', name = 'email', value=`${usrEmPh.email}`)
+           input#phone(type = 'hidden', name = 'phone', value = `${usrEmPh.phone}`)
+           input#usrId(type = 'hidden', name = 'id', value =`${usrInfo.id}`)
+           input#name(type = 'hidden', name = 'name', value =`${usrInfo.name}`)
+           input#authTok(type = 'hidden', name = 'auTok', value = `${authTok}`)
+           br
+           br
+        br
+        footer
+           p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+           address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+           p
+           colspan 
+              a(href='/tnc') Terms&Conditions  
+           colspan 
+              a(href='/privPo') Privacy Policy

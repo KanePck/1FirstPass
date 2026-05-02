@@ -17,14 +17,16 @@ html
   head
     title New password generated for usage
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
-    script(src='/scripts/dataStorage.js')
+    script(src='/scripts/dataStorage.js' nonce=nonce)
 	
   body
   p For Url: #{pwObj.url}
   p User Name: #{pwObj.webUn} 
   p Password: #{pwObj.webPw}
-    
-  p Please press STORE DATA button to store the url and username/password to this browser storage database
+  p Please input your master password which would be used to encrypt your web credentials
+  input#masPwd(type='password' autofocus, name='masterPwd' required, minlength='8', maxlength='16', value='')
+  br  
+  p After input the master password, please press STORE DATA button to store the encrypted web credentials to this browser storage database
   button#store
    |STORE DATA
   script(nonce=nonce).
@@ -34,10 +36,33 @@ html
     name: '#{pwObj.webUn}',
     url: '#{pwObj.url}'
     };
-    const js=JSON.stringify(pwObj);
-    document.getElementById('store').addEventListener('click', function() {
-    storePassword(js);
+    //const js=JSON.stringify(pwObj);
+    document.getElementById('store').addEventListener('click', async function() {
+        // Collect the Master Password from the input field
+        const masterPwdInput = document.getElementById('masPwd');
+        const masterPassword = masterPwdInput.value;
+        const message = document.getElementById("pwdVerify");
+        try {
+            verifyMasPwd(masterPassword, pwObj)
+            /*if (verifyMasPwd(masterPassword)) {
+                message.innerText = 'The input master password is correct.';
+                try {
+                    await storePassword(pwObj, masterPassword);
+                    //Security: Clear the input field from the screen after processing
+                    masterPwdInput.value = '';
+                    alert("Credentials encrypted and stored successfully!");
+                } catch (err) {
+                    console.log("Storage failed:", err);
+                }
+            } else {
+                message.innerText = 'The input master password not correct, please reinput';
+            }*/
+        } catch (err) {
+            console.log('Verification of master passsword failed!', err);
+            return;
+        }
     });
+  p#pwdVerify
   p#storeButt
   br
   p#mess

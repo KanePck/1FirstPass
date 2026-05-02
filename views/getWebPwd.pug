@@ -18,11 +18,22 @@ html
   head
     title To retrieve the password
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
-    script(src='/scripts/webPwd.js')
+    script(src='/scripts/vaultSession.js')
+    script(src='/scripts/webPwd.js' nonce=nonce)
   body
   p(data-url=webObj.url) The website/app that you requested: #{webObj.url}
   table
     tbody
+  p Please input your master password which would be used to decrypt the password of #{webObj.url}
+  input#masPwd(type='password' autofocus, name='masterPwd' required, minlength='8', maxlength='16', value='')
+  br
+  p After input the master password, please press VIEW PASSWORD button to display the decrypted web password
+  button#view
+   |VIEW PASSWORD
+  p#pwdVerify
+  br
+  p#decrypt
+  br
   p If you want to browse to new URL page to fill web credentials, please press new URL button to open new url page (not applicable for app).
   button#newWin
    | New Window: #{webObj.url}

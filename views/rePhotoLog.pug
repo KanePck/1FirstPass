@@ -15,13 +15,13 @@ html
 head
 Title User self photo session
 link(rel='stylesheet', href='/stylesheets/photoCap.css')
-script(src='/scripts/capPhoto2.js')
+script(src='/scripts/capPhoto2.js' nonce=nonce)
 body
  .contentarea
   h1(data-usrName=username) Your face login fails.
   p #{username}, you have #{remObj.Remain} remaining attempts. Please do again.
   p Please align your face inside the rectangular.
-  script(src='/scripts/camOn.js')
+  script(src='/scripts/camOn.js' nonce=nonce)
   button#startButton
       |1.Start camera
   br

@@ -19,7 +19,7 @@ html
   head
     title Your new websites (Called from /webAccess)
     link(rel='stylesheet', href='/stylesheets/newUrl.css')
-    script(src='/scripts/newWeb.js')
+    script(src='/scripts/newWeb.js' nonce=nonce)
 	
   body
     h1(data-newUrl=urlObj.url) The new website that needs new username and password: #{urlObj.url}

@@ -16,7 +16,7 @@ html
   head
     title New user name generated for usage
     link(rel='stylesheet', href='/stylesheets/main.css')
-    script(src='/scripts/dataStorage.js')
+    script(src='/scripts/dataStorage.js' nonce=nonce)
   body
   p New User name: #{unObj.webUn}
   p For Url: #{unObj.url}
@@ -25,7 +25,7 @@ html
   p Please press STORAGE button to store the password to this browser storage
   button#store
    |STORAGE
-  script.
+  script(nonce=nonce).
     // Assuming pwObj is available in this script
     const pwObj = {
     pwd: '#{pwObj.pwd}',

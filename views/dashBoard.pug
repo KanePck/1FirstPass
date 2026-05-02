@@ -1,0 +1,73 @@
+//Called from /dashBoard
+doctype html
+html
+  nav.navbar.navbar-inverse
+  .container-fluid
+      .navbar-header
+      p.nav.navbar-nav
+          a(href='/')
+              img(src='/images/1FirstPassLogo.png', alt='1FirstPass', heigth='auto', width='130')
+          colspan.nav
+              a(href='/') Home
+          colspan.nav
+              a(href='/aboutUs') About us   
+          colspan.nav
+              a(href='/contactUs') Contact us 
+  head
+    title DashBoard listing rows of web credential data
+    link(rel='stylesheet', href='/stylesheets/dashBoard.css')
+    script(src='/scripts/dashBoard.js' nonce=nonce)
+  body
+  h1 Add new web URL/password/credentials => 
+    a(href="/validLogin") New Web
+  h2 Your Secure Vault
+    p Below are your encrypted credentials. Hover over a password to reveal it.
+
+    if vault && vault.length > 0
+      table.vault-table
+        thead
+          tr
+            th Website/App
+            th Username
+            th Password
+            th Action
+        tbody
+          each item in vault
+            //Store the encrypted strings in data-attributes on the row
+            tr.vault-item(
+              data-encrypted=item.encryptedWebPw
+              data-wrapped=item.wrappedDek
+              data-iv=item.iv
+              data-url=item.webUrl
+            )
+              td
+                //- If the string contains a dot and doesn't have spaces, treat it as a URL
+                if item.webUrl.includes('.') && !item.webUrl.includes(' ')
+                   a(href=item.webUrl.startsWith('http') ? item.webUrl : `https://${item.webUrl}`, target="_blank")= item.webUrl
+                else
+                   .app
+                   p=item.webUrl
+              td
+                span.user-text= item.webUserName
+                //- Button specifically for Username
+                button.copyUserBtn(data-user=item.webUserName) Copy
+              td
+                span.password-display Decrypting...
+                //- Button specifically for Password
+                button.copyPassBtn(data-pass="" data-url=item.webUrl) Copy
+              td 
+                button.deleteBtn(data-id=item._id data-usrId=item.userId) Delete
+    else
+      .empty-state
+        p Your vault is empty. 
+        a(href="/validLogin") Add your first password.
+  br
+  br
+  footer
+      p The entirety of this site is protected by copyright @2024 1FirstPass company limited
+      address 84/23 Ratchapruek28 Road, Talingchan, Bangkok 10170, Thailand
+      p
+      colspan 
+          a(href='/tnc') Terms&Conditions  
+      colspan 
+          a(href='/privPo') Privacy Policy

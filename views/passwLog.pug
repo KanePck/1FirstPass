@@ -1,4 +1,4 @@
-//Called from login.js
+//Called from /login
 doctype html
 html
 nav.navbar.navbar-inverse
@@ -16,19 +16,22 @@ nav.navbar.navbar-inverse
 head
 Title User to provide a login password
 link(rel='stylesheet', href='/stylesheets/main.css')
+script(src='/scripts/handleLogin.js' nonce=nonce)
 body
   script(nonce=nonce).
         var sid=localStorage.getItem('sessionId');
         console.log('sid: ', sid);
         document.addEventListener('DOMContentLoaded', function() {
            document.getElementById('sid').value = sid;
+           //document.getElementById('logCount').value= count;
         });
   .contentarea
-  h1 User login password is required and you have 3 attempts to login.
-  p#passw 
-        form(action='/logPasswHdlr', id='passwd', method='post') #{username}, please input valid password
+  h1 User login password is required and you have #{attempt} attempts to login.
+  p 
+        form(action='/logPasswHdlr', id='loginForm', method='post') 
                 br
-                input#name(checked='checked', name='username', type='radio', value=`${username}`)
+                label(for='name') #{username}, please input valid password
+                input#name(type='hidden',  name='username', value=`${username}`)
                 br
                 br
                 label(for='passw') Password: (8-16 characters) 
@@ -38,6 +41,7 @@ body
                 br
                 button(type='submit') Submit
                 input#sid(type='hidden', name='sessionId')
+                input#logCount(type='hidden', name='logCount', value=`${attempt}`)
 br
 br
 footer

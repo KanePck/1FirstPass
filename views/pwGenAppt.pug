@@ -17,7 +17,7 @@ html
   head
     title
     link(rel='stylesheet', href='/stylesheets/oldUrl.css')
-    script(src='/scripts/getToken.js')
+    script(src='/scripts/getToken.js' nonce=nonce)
   body
     script(nonce=nonce).
           var usrName = localStorage.getItem('usrName');
